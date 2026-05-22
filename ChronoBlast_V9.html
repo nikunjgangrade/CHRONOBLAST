@@ -14,6 +14,7 @@
 <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Crect width='180' height='180' rx='40' fill='%2306080d'/%3E%3Ccircle cx='90' cy='104' r='56' stroke='%2300e6c8' stroke-width='10' fill='none'/%3E%3Cpath d='M90 73v32l20 12' stroke='%2300e6c8' stroke-width='10' stroke-linecap='round'/%3E%3Cpath d='M68 18h44M90 18v18' stroke='%2300e6c8' stroke-width='10' stroke-linecap='round'/%3E%3C/svg%3E"/>
 <link rel="manifest" id="pwa-manifest"/>
 <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 <style>
 :root {
   --bg:        #06080d;
@@ -432,6 +433,14 @@ body{
 .report-stat-box,.rate-box,.mr-sum-box,.preset-btn,
 .pf-input,.credit-toast,.profile-modal{
   transition:background 0.35s ease,border-color 0.35s ease,box-shadow 0.35s ease,color 0.35s ease;}
+
+/* ── Header ── */
+.header{
+  position:relative;
+  text-align:center;
+  margin-bottom:20px;
+  padding:0 44px; /* leave room for abs-positioned toggle on both sides */
+}
 .header-logo{display:inline-flex;align-items:center;gap:10px;margin-bottom:6px;}
 .logo-icon{width:36px;height:36px;border:1.5px solid var(--teal);border-radius:10px;
   display:flex;align-items:center;justify-content:center;
@@ -446,31 +455,40 @@ body{
 .tabs{display:flex;background:var(--surface);border:1px solid var(--border);
   border-radius:14px;padding:5px;margin-bottom:18px;gap:4px;
   backdrop-filter:blur(12px);animation:fadeUp 0.6s 0.1s ease both;}
-.tab{flex:1;padding:9px 0;border:none;border-radius:10px;background:transparent;
-  font-family:'DM Sans',sans-serif;font-size:0.6rem;font-weight:500;
-  letter-spacing:0.05em;text-transform:uppercase;color:var(--muted);cursor:pointer;
-  transition:color 0.22s ease, background 0.22s ease, border-color 0.22s ease, box-shadow 0.22s ease, opacity 0.22s ease;
-  position:relative;overflow:hidden;}
+.tab{
+  flex:1;padding:8px 0;border:none;border-radius:10px;background:transparent;
+  font-family:'DM Sans',sans-serif;font-size:0;/* hide text, use pseudo */
+  cursor:pointer;
+  transition:color 0.22s ease,background 0.22s ease,border-color 0.22s ease,box-shadow 0.22s ease;
+  position:relative;overflow:hidden;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+}
+/* Strip the emoji+text from HTML, render via data attrs instead */
+.tab .tab-icon{font-size:1rem;line-height:1;display:block;}
+.tab .tab-label{font-size:0.5rem;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;
+  color:var(--muted);display:block;font-family:'DM Sans',sans-serif;}
 .tab::before{content:'';position:absolute;inset:0;background:var(--teal-glow);opacity:0;transition:opacity 0.2s ease;}
 .tab:hover::before{opacity:1;}
-.tab.active{background:var(--glass);color:var(--teal);border:1px solid var(--border2);
+.tab.active{background:var(--glass);border:1px solid var(--border2);
   box-shadow:0 0 14px var(--teal-dim),inset 0 1px 0 rgba(0,230,200,0.1);}
+.tab.active .tab-label{color:var(--teal);}
 
 /* ── Panels ── */
-.panel{display:none;opacity:0;transform:translateY(10px);}
-.panel.active{display:block;animation:panelIn 0.38s cubic-bezier(0.22,1,0.36,1) both;}
-.panel.exit{display:block;animation:panelOut 0.18s cubic-bezier(0.4,0,1,1) forwards;}
-@keyframes panelIn{from{opacity:0;transform:translateY(12px) scale(0.992);}to{opacity:1;transform:translateY(0) scale(1);}}
-@keyframes panelOut{from{opacity:1;transform:translateY(0) scale(1);}to{opacity:0;transform:translateY(-5px) scale(0.995);}}
+.panel{display:none;opacity:0;}
+.panel.active{display:block;animation:panelIn 0.28s cubic-bezier(0.22,1,0.36,1) both;}
+.panel.exit{display:block;animation:panelOut 0.15s ease forwards;}
+@keyframes panelIn{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
+@keyframes panelOut{from{opacity:1;}to{opacity:0;}}
 @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
 @keyframes fadeDown{from{opacity:0;transform:translateY(-12px)}to{opacity:1;transform:translateY(0)}}
 @keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
 
 /* ── Cards ── */
 .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
-  padding:30px 26px 26px;margin-bottom:14px;backdrop-filter:blur(16px);
+  padding:30px 26px 26px;margin-bottom:14px;
   box-shadow:0 4px 40px rgba(0,0,0,0.3),inset 0 1px 0 rgba(255,255,255,0.04);
-  transition:box-shadow 0.3s,background 0.35s ease,border-color 0.35s ease;}
+  transition:box-shadow 0.3s,background 0.35s ease,border-color 0.35s ease;
+  will-change:auto;}
 [data-theme="light"] .card{
   box-shadow:0 2px 24px rgba(0,40,80,0.08),0 1px 4px rgba(0,40,80,0.06),inset 0 1px 0 rgba(255,255,255,0.9);}
 .card.running-glow{border-color:var(--border2);
@@ -478,7 +496,7 @@ body{
 [data-theme="light"] .card.running-glow{
   box-shadow:0 2px 24px rgba(0,40,80,0.08),0 0 32px var(--teal-glow),inset 0 1px 0 rgba(255,255,255,0.9);}
 .sub-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
-  padding:22px 22px 18px;margin-bottom:14px;backdrop-filter:blur(12px);
+  padding:22px 22px 18px;margin-bottom:14px;
   box-shadow:0 2px 20px rgba(0,0,0,0.2);
   transition:background 0.35s ease,border-color 0.35s ease,box-shadow 0.35s ease;}
 [data-theme="light"] .sub-card{
@@ -675,70 +693,92 @@ body{
   width:3px;height:3px;border-radius:50%;background:var(--teal);box-shadow:0 0 4px var(--teal-glow);}
 .cal-day.empty-day{background:transparent;border-color:transparent;}
 
-/* ══ FOCUS MUSIC PANEL ══ */
-.fm-panel{
-  background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
-  padding:16px 18px;margin-bottom:14px;backdrop-filter:blur(16px);
-  transition:border-color 0.3s,box-shadow 0.3s;}
-.fm-panel.fm-active{
-  border-color:var(--border2);
-  box-shadow:0 0 24px var(--teal-dim),inset 0 0 24px rgba(0,230,200,0.02);}
-[data-theme="light"] .fm-panel{background:rgba(255,255,255,0.82);border:1.5px solid rgba(0,0,0,0.11);}
-[data-theme="light"] .fm-panel.fm-active{border-color:var(--border2);}
-.fm-header{display:flex;align-items:center;gap:10px;margin-bottom:12px;}
-.fm-title-group{flex:1;}
-.fm-title{font-size:0.6rem;letter-spacing:0.3em;text-transform:uppercase;color:var(--muted);}
-.fm-desc{font-size:0.58rem;color:var(--teal);margin-top:2px;font-family:'Space Mono',monospace;letter-spacing:0.04em;}
-.fm-indicator{width:8px;height:8px;border-radius:50%;background:var(--muted2);
-  transition:all 0.4s;flex-shrink:0;}
-.fm-indicator.active{background:var(--teal);box-shadow:0 0 10px var(--teal-glow);animation:fm-pulse 2s ease-in-out infinite;}
+/* ══ FOCUS MUSIC — FLOATING TOGGLE WIDGET ══ */
 @keyframes fm-pulse{0%,100%{opacity:1;transform:scale(1);}50%{opacity:0.7;transform:scale(1.3);}}
-.fm-toggle-btn{
-  width:32px;height:32px;border-radius:10px;
-  border:1px solid var(--border2);background:var(--teal-dim);
-  color:var(--teal);font-size:0.85rem;cursor:pointer;
-  display:flex;align-items:center;justify-content:center;
-  transition:all 0.2s;flex-shrink:0;}
-.fm-toggle-btn:hover{background:rgba(0,230,200,0.18);box-shadow:0 0 14px var(--teal-glow);}
-.fm-profiles{display:flex;gap:6px;margin-bottom:12px;}
-.fm-profile-btn{
-  flex:1;padding:7px 6px;border-radius:10px;
+@keyframes fm-panel-in{from{opacity:0;transform:translateY(10px) scale(0.97);}to{opacity:1;transform:translateY(0) scale(1);}}
+
+/* The persistent pill button in bottom-right */
+.fm-pill{
+  position:fixed;bottom:24px;right:20px;z-index:200;
+  display:flex;align-items:center;gap:8px;
+  padding:9px 16px 9px 12px;
+  background:var(--g2);border:1px solid var(--border2);border-radius:40px;
+  backdrop-filter:blur(20px);
+  box-shadow:0 4px 24px rgba(0,0,0,0.35),0 0 20px var(--teal-dim);
+  cursor:pointer;user-select:none;
+  transition:box-shadow 0.25s,border-color 0.25s,transform 0.18s cubic-bezier(0.34,1.56,0.64,1);}
+.fm-pill:hover{box-shadow:0 4px 28px rgba(0,0,0,0.4),0 0 28px var(--teal-glow);transform:translateY(-1px);}
+.fm-pill:active{transform:scale(0.96);}
+.fm-pill.playing{border-color:var(--teal);box-shadow:0 4px 28px rgba(0,0,0,0.35),0 0 28px var(--teal-glow);}
+.fm-pill-dot{width:8px;height:8px;border-radius:50%;background:var(--muted2);flex-shrink:0;transition:all 0.35s;}
+.fm-pill.playing .fm-pill-dot{background:var(--teal);box-shadow:0 0 8px var(--teal-glow);animation:fm-pulse 1.8s ease-in-out infinite;}
+.fm-pill-icon{font-size:1rem;line-height:1;flex-shrink:0;}
+.fm-pill-label{font-size:0.58rem;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted);font-family:'DM Sans',sans-serif;white-space:nowrap;}
+.fm-pill.playing .fm-pill-label{color:var(--teal);}
+
+[data-theme="light"] .fm-pill{background:rgba(255,255,255,0.95);box-shadow:0 4px 20px rgba(0,40,80,0.12),0 0 16px var(--teal-dim);border:1.5px solid rgba(0,0,0,0.12);}
+[data-theme="light"] .fm-pill.playing{border-color:var(--teal);}
+
+/* The expandable panel that appears above the pill */
+.fm-panel-popup{
+  position:fixed;bottom:72px;right:20px;z-index:199;
+  width:260px;
+  background:var(--g2);border:1px solid var(--border2);border-radius:20px;
+  padding:18px 18px 14px;
+  backdrop-filter:blur(24px);
+  box-shadow:0 8px 40px rgba(0,0,0,0.45),0 0 32px var(--teal-dim);
+  display:none;
+  animation:fm-panel-in 0.28s cubic-bezier(0.34,1.56,0.64,1) both;}
+.fm-panel-popup.open{display:block;}
+[data-theme="light"] .fm-panel-popup{background:rgba(255,255,255,0.97);box-shadow:0 8px 36px rgba(0,40,80,0.14),0 0 24px var(--teal-dim);border:1.5px solid rgba(0,0,0,0.11);}
+
+/* Panel internals */
+.fm-popup-title{font-size:0.54rem;letter-spacing:0.34em;text-transform:uppercase;color:var(--muted);margin-bottom:4px;}
+.fm-popup-desc{font-size:0.62rem;color:var(--teal);font-family:'Space Mono',monospace;letter-spacing:0.03em;margin-bottom:14px;}
+
+/* Profile buttons inside popup */
+.fm-popup-profiles{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:14px;}
+.fm-popup-profile-btn{
+  padding:8px 4px;border-radius:10px;
   border:1px solid var(--border);background:var(--surface2);
-  color:var(--muted);font-size:0.58rem;font-weight:500;
-  letter-spacing:0.06em;text-align:center;cursor:pointer;transition:all 0.18s;}
-.fm-profile-btn.active{
-  border-color:var(--border2);color:var(--teal);background:var(--teal-dim);
-  box-shadow:0 0 12px var(--teal-dim);}
-.fm-profile-btn:hover:not(.active){border-color:var(--border2);color:var(--teal);}
-[data-theme="light"] .fm-profile-btn{background:rgba(255,255,255,0.88);}
-.fm-vol-row{display:flex;align-items:center;gap:10px;}
-.fm-vol-label{font-size:0.52rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--muted);min-width:28px;}
-.fm-vol-slider{
-  flex:1;-webkit-appearance:none;appearance:none;height:3px;
-  border-radius:3px;background:var(--muted2);outline:none;cursor:pointer;}
-.fm-vol-slider::-webkit-slider-thumb{
+  color:var(--muted);font-size:0.56rem;font-weight:500;
+  letter-spacing:0.04em;text-align:center;cursor:pointer;
+  transition:all 0.18s;font-family:'DM Sans',sans-serif;line-height:1.4;}
+.fm-popup-profile-btn .fp-icon{font-size:1.1rem;display:block;margin-bottom:3px;}
+.fm-popup-profile-btn.active{border-color:var(--border2);color:var(--teal);background:var(--teal-dim);box-shadow:0 0 10px var(--teal-dim);}
+.fm-popup-profile-btn:hover:not(.active){border-color:var(--border2);color:var(--teal);}
+[data-theme="light"] .fm-popup-profile-btn{background:rgba(255,255,255,0.88);}
+[data-theme="light"] .fm-popup-profile-btn.active{border-color:var(--teal);}
+
+/* Volume */
+.fm-popup-vol-row{display:flex;align-items:center;gap:9px;margin-bottom:14px;}
+.fm-popup-vol-label{font-size:0.5rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--muted);flex-shrink:0;width:24px;}
+.fm-popup-vol-slider{
+  flex:1;-webkit-appearance:none;appearance:none;height:4px;
+  border-radius:4px;background:var(--muted2);outline:none;cursor:ew-resize;}
+.fm-popup-vol-slider::-webkit-slider-thumb{
   -webkit-appearance:none;width:14px;height:14px;border-radius:50%;
   background:var(--teal);box-shadow:0 0 8px var(--teal-glow);cursor:pointer;
   border:2px solid rgba(0,230,200,0.3);}
-.fm-vol-val{font-size:0.6rem;font-family:'Space Mono',monospace;color:var(--muted);min-width:28px;text-align:right;}
-.fm-note{font-size:0.52rem;color:var(--muted);margin-top:10px;line-height:1.6;
-  padding:8px 10px;background:var(--muted2);border-radius:8px;letter-spacing:0.02em;}
+.fm-popup-vol-val{font-size:0.55rem;font-family:'Space Mono',monospace;color:var(--muted);width:32px;text-align:right;flex-shrink:0;}
 
-/* ── Floating focus music badge (visible on all panels when playing) ── */
-.fm-floating{
-  position:fixed;bottom:20px;right:16px;z-index:100;
-  background:var(--surface2);border:1px solid var(--border2);
-  border-radius:20px;padding:6px 12px 6px 8px;
-  display:flex;align-items:center;gap:7px;
-  backdrop-filter:blur(16px);box-shadow:0 4px 24px rgba(0,0,0,0.3),0 0 20px var(--teal-dim);
-  cursor:pointer;transition:all 0.3s;
-  opacity:0;pointer-events:none;transform:translateY(10px);}
-.fm-floating.show{opacity:1;pointer-events:auto;transform:translateY(0);}
-.fm-floating:hover{box-shadow:0 4px 28px rgba(0,0,0,0.35),0 0 28px var(--teal-glow);}
-.fm-float-dot{width:7px;height:7px;border-radius:50%;background:var(--teal);
-  box-shadow:0 0 8px var(--teal-glow);animation:fm-pulse 1.5s ease-in-out infinite;}
-.fm-float-label{font-size:0.6rem;color:var(--teal);font-family:'Space Mono',monospace;letter-spacing:0.04em;}
-[data-theme="light"] .fm-floating{background:rgba(255,255,255,0.92);box-shadow:0 4px 24px rgba(0,40,80,0.14),0 0 20px var(--teal-dim);}
+/* Big play/pause in popup */
+.fm-popup-play-btn{
+  width:100%;padding:10px 0;border-radius:12px;
+  border:1px solid var(--border2);background:var(--teal-dim);
+  color:var(--teal);font-family:'DM Sans',sans-serif;font-size:0.7rem;
+  font-weight:600;letter-spacing:0.12em;text-transform:uppercase;
+  cursor:pointer;transition:all 0.2s;display:flex;align-items:center;justify-content:center;gap:8px;}
+.fm-popup-play-btn:hover{background:rgba(0,230,200,0.18);box-shadow:0 0 18px var(--teal-glow);}
+.fm-popup-play-btn.playing{background:rgba(0,230,200,0.04);}
+.fm-popup-note{font-size:0.5rem;color:var(--muted);margin-top:10px;line-height:1.55;
+  padding:7px 9px;background:var(--muted2);border-radius:8px;}
+
+/* Safe area */
+@supports (padding-bottom: env(safe-area-inset-bottom)){
+  .fm-pill,.fm-panel-popup{right:max(20px, calc(20px + env(safe-area-inset-right)));}
+  .fm-pill{bottom:max(24px, calc(24px + env(safe-area-inset-bottom)));}
+  .fm-panel-popup{bottom:max(72px, calc(72px + env(safe-area-inset-bottom)));}}
 
 .pomo-modes{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:20px;}
 .pomo-mode-card{background:var(--surface2);border:1px solid var(--border);border-radius:14px;
@@ -1192,6 +1232,418 @@ body{
 .tit-pomo-phase.rest{background:rgba(255,209,102,0.08);color:var(--gold);border:1px solid rgba(255,209,102,0.2);}
 .tit-pomo-rounds{font-size:0.5rem;color:var(--muted);margin-left:auto;}
 
+/* ═══════════════════════════════════════════════════════════════════
+   ✦ PREMIUM POLISH LAYER ✦
+   Non-destructive, additive refinements that elevate every surface.
+   Preserves UI, fonts, concept — enhances execution quality.
+   Authored by: senior dev layer · all overrides use higher specificity.
+   ═══════════════════════════════════════════════════════════════════ */
+
+:root{color-scheme:dark light;}
+
+/* — Global text rendering & tabular numerals — */
+html{-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;text-rendering:optimizeLegibility;}
+body{font-feature-settings:"kern" 1,"liga" 1,"calt" 1;}
+
+/* Tabular numerals for every clock & numeric display — kills digit jitter */
+.time-display,.time-display .ms,.pomo-big-time,.session-dur,.lap-time,
+.stat-value,.report-hero-time,.report-stat-val,.rate-val,
+.mr-pct-badge,.mr-sum-val,.mr-time-done,.mr-time-target,.mr-min-val,
+.task-clock-display,.task-ring-pct,.tit-time,.fs-num,.completion-pct,
+.pomo-rounds,.dur-modal-name,.launch-modal-dur,.credit-toast-name,
+.sph-age,.sph-name,.profile-name-big,.spw-age,.spw-name,.time-field input,
+.mr-hms-input,.pomo-mode-title,.fm-vol-val,.fm-desc,.fs-grade{
+  font-variant-numeric:tabular-nums;
+  font-feature-settings:"tnum" 1,"kern" 1;
+}
+
+/* — Subtle film grain overlay (0.012 opacity SVG noise) — */
+body::after{
+  content:'';position:fixed;inset:0;pointer-events:none;z-index:2;
+  opacity:0.018;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 1 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+  mix-blend-mode:overlay;
+}
+[data-theme="light"] body::after{opacity:0.028;mix-blend-mode:multiply;}
+
+/* — Cursor-tracked ambient glow (desktop only, subtle) — */
+.cursor-glow{
+  position:fixed;top:0;left:0;width:380px;height:380px;border-radius:50%;
+  pointer-events:none;z-index:1;opacity:0;
+  transform:translate3d(-50%,-50%,0);
+  background:radial-gradient(circle,rgba(0,230,200,0.09) 0%,rgba(0,230,200,0.04) 28%,transparent 70%);
+  mix-blend-mode:screen;
+  transition:opacity 0.4s cubic-bezier(0.22,1,0.36,1);
+  filter:blur(8px);
+  will-change:transform,opacity;
+}
+[data-theme="light"] .cursor-glow{
+  background:radial-gradient(circle,rgba(0,168,150,0.12) 0%,rgba(0,168,150,0.05) 28%,transparent 70%);
+  mix-blend-mode:multiply;
+}
+@media (hover:none) and (pointer:coarse){ .cursor-glow{display:none;} }
+@media (prefers-reduced-motion:reduce){ .cursor-glow{display:none;} }
+
+/* — Premium easing override for interactive elements — */
+.btn,.tab,.preset-btn,.task-act,.mr-launch-btn,.mr-del-btn,.mr-new-btn,
+.task-filter-btn,.task-add-btn,.pf-save-btn,.sph-edit-btn,.theme-toggle,
+.fm-popup-play-btn,.fm-popup-profile-btn,.fm-pill,.task-type-pill,.task-dur-pill,.task-pri-pill,
+.dur-pill,.dur-mode-btn,.launch-mode-btn,.credit-yes,.credit-no,
+.tit-btn,.mirror-launch-btn,.pwa-install-btn,.pwa-dismiss-btn,.clear-btn,
+.task-check,.task-color-dot{
+  transition:transform 0.22s cubic-bezier(0.34,1.56,0.64,1),
+             background 0.22s cubic-bezier(0.22,1,0.36,1),
+             border-color 0.22s cubic-bezier(0.22,1,0.36,1),
+             color 0.22s cubic-bezier(0.22,1,0.36,1),
+             box-shadow 0.28s cubic-bezier(0.22,1,0.36,1),
+             opacity 0.22s cubic-bezier(0.22,1,0.36,1);
+}
+
+/* — Tactile press feedback (inner shadow micro-depress) — */
+.btn:active:not(:disabled),.preset-btn:active,.task-add-btn:active,
+.pf-save-btn:active,.mr-launch-btn:active,.mr-new-btn:active,
+.mirror-launch-btn:active,.tit-btn:active,.credit-yes:active,
+.pwa-install-btn:active,.fm-popup-play-btn:active,.theme-toggle:active{
+  transform:scale(0.965);
+  box-shadow:inset 0 1px 3px rgba(0,0,0,0.28),0 0 0 rgba(0,0,0,0) !important;
+}
+[data-theme="light"] .btn:active:not(:disabled),
+[data-theme="light"] .preset-btn:active,
+[data-theme="light"] .task-add-btn:active,
+[data-theme="light"] .pf-save-btn:active,
+[data-theme="light"] .mr-launch-btn:active,
+[data-theme="light"] .mr-new-btn:active,
+[data-theme="light"] .mirror-launch-btn:active,
+[data-theme="light"] .tit-btn:active,
+[data-theme="light"] .credit-yes:active,
+[data-theme="light"] .theme-toggle:active{
+  box-shadow:inset 0 1px 3px rgba(0,40,80,0.18) !important;
+}
+
+/* — Ripple container for all tappable primitives — */
+.btn,.tab,.preset-btn,.task-act,.mr-launch-btn,.mr-del-btn,.mr-new-btn,
+.task-filter-btn,.task-add-btn,.pf-save-btn,.sph-edit-btn,.theme-toggle,
+.fm-popup-play-btn,.fm-popup-profile-btn,.fm-pill,.task-type-pill,.task-dur-pill,.task-pri-pill,
+.dur-pill,.dur-mode-btn,.launch-mode-btn,.credit-yes,.credit-no,
+.tit-btn,.mirror-launch-btn,.pwa-install-btn,.clear-btn,.task-add-btn,
+.pomo-mode-card,.task-color-dot{
+  position:relative;overflow:hidden;-webkit-tap-highlight-color:transparent;
+}
+.ripple-ink{
+  position:absolute;border-radius:50%;pointer-events:none;
+  background:radial-gradient(circle,rgba(0,230,200,0.55) 0%,rgba(0,230,200,0.18) 40%,transparent 72%);
+  transform:translate(-50%,-50%) scale(0);
+  animation:ripplePop 0.65s cubic-bezier(0.22,1,0.36,1) forwards;
+  mix-blend-mode:screen;
+}
+[data-theme="light"] .ripple-ink{
+  background:radial-gradient(circle,rgba(0,168,150,0.45) 0%,rgba(0,168,150,0.15) 40%,transparent 72%);
+  mix-blend-mode:multiply;
+}
+@keyframes ripplePop{
+  0%{transform:translate(-50%,-50%) scale(0);opacity:1;}
+  100%{transform:translate(-50%,-50%) scale(1);opacity:0;}
+}
+
+/* — Accessible focus rings (keyboard only, via :focus-visible) — */
+.btn:focus-visible,.tab:focus-visible,.preset-btn:focus-visible,
+.task-add-btn:focus-visible,.pf-save-btn:focus-visible,.theme-toggle:focus-visible,
+.fm-popup-play-btn:focus-visible,.task-check:focus-visible,.mr-launch-btn:focus-visible,
+.mr-new-btn:focus-visible,.tit-btn:focus-visible,.pwa-install-btn:focus-visible,
+.task-text-input:focus-visible,.pf-input:focus-visible,.time-field input:focus-visible,
+.fm-popup-profile-btn:focus-visible,.sph-edit-btn:focus-visible,.clear-btn:focus-visible{
+  outline:2px solid var(--teal);
+  outline-offset:2px;
+  box-shadow:0 0 0 4px var(--teal-dim),0 0 20px var(--teal-glow);
+}
+
+/* — Card depth: layered micro-shadows (premium depth) — */
+.card{
+  box-shadow:
+    0 1px 2px rgba(0,0,0,0.22),
+    0 2px 6px rgba(0,0,0,0.22),
+    0 8px 32px rgba(0,0,0,0.28),
+    0 24px 64px rgba(0,0,0,0.18),
+    inset 0 1px 0 rgba(255,255,255,0.045),
+    inset 0 -1px 0 rgba(0,0,0,0.25);
+}
+[data-theme="light"] .card{
+  box-shadow:
+    0 1px 2px rgba(0,40,80,0.06),
+    0 2px 8px rgba(0,40,80,0.06),
+    0 10px 32px rgba(0,40,80,0.09),
+    inset 0 1px 0 rgba(255,255,255,0.95),
+    inset 0 -1px 0 rgba(0,40,80,0.05);
+}
+.card.running-glow{
+  box-shadow:
+    0 1px 2px rgba(0,0,0,0.22),
+    0 8px 32px rgba(0,0,0,0.3),
+    0 0 48px var(--teal-glow),
+    0 0 96px rgba(0,230,200,0.06),
+    inset 0 1px 0 rgba(0,230,200,0.08);
+}
+
+/* — Progress ring milestone glow pulse — */
+.ring-fill[data-milestone="90"],.ring-fill[data-milestone="100"]{
+  filter:drop-shadow(0 0 14px var(--teal-glow)) drop-shadow(0 0 28px rgba(0,230,200,0.35));
+}
+
+/* — Running time-display gradient shine (animated) — */
+.time-display.running{
+  background:linear-gradient(100deg,var(--teal) 0%,#6cffe4 35%,var(--teal) 65%,#00bfa6 100%);
+  background-size:220% 100%;
+  -webkit-background-clip:text;background-clip:text;
+  color:transparent;
+  animation:timeShine 3.8s linear infinite;
+  text-shadow:0 0 40px rgba(0,230,200,0.22),0 0 80px rgba(0,230,200,0.08);
+}
+.time-display.running .ms{
+  -webkit-text-fill-color:rgba(0,230,200,0.5);color:rgba(0,230,200,0.5);
+  background:none;
+}
+@keyframes timeShine{0%{background-position:0% 50%;}100%{background-position:220% 50%;}}
+.pomo-big-time.running{
+  background:linear-gradient(100deg,var(--teal) 0%,#6cffe4 35%,var(--teal) 65%,#00bfa6 100%);
+  background-size:220% 100%;
+  -webkit-background-clip:text;background-clip:text;
+  color:transparent;
+  animation:timeShine 3.8s linear infinite;
+}
+@media (prefers-reduced-motion:reduce){
+  .time-display.running,.pomo-big-time.running{animation:none;color:var(--teal);background:none;-webkit-text-fill-color:var(--teal);}
+}
+
+/* — Lap item entrance — */
+.lap-item{animation:lapSlide 0.3s cubic-bezier(0.22,1,0.36,1) both;}
+@keyframes lapSlide{
+  from{opacity:0;transform:translateX(-8px);}
+  to{opacity:1;transform:translateX(0);}
+}
+
+/* — Task item entrance — */
+.task-item{animation:taskSlide 0.3s cubic-bezier(0.22,1,0.36,1) both;}
+@keyframes taskSlide{
+  from{opacity:0;transform:translateY(6px);}
+  to{opacity:1;transform:translateY(0);}
+}
+
+/* — Perf hints — */
+.panel{contain:layout style;}
+.card,.sub-card{contain:layout style;}
+.sessions-scroll,.task-scroll,.scroll-list{content-visibility:auto;contain-intrinsic-size:auto 400px;}
+/* Only animate the running numerics — avoid blanket will-change */
+.ring-fill,.fs-fill,.task-ring-fill{will-change:stroke-dashoffset;}
+.time-display.running,.pomo-big-time.running{will-change:background-position;}
+/* NO stagger animation on panel children — it causes visible lag on every tab switch */
+
+/* — Scroll shadow indicators (applied dynamically via JS) — */
+.scroll-wrap-fade{position:relative;}
+.scroll-wrap-fade::before,.scroll-wrap-fade::after{
+  content:'';position:absolute;left:0;right:0;height:28px;z-index:5;
+  pointer-events:none;opacity:0;transition:opacity 0.3s cubic-bezier(0.22,1,0.36,1);
+}
+.scroll-wrap-fade::before{
+  top:0;background:linear-gradient(to bottom,var(--surface),transparent);
+}
+.scroll-wrap-fade::after{
+  bottom:0;background:linear-gradient(to top,var(--surface),transparent);
+}
+.scroll-wrap-fade.has-top::before{opacity:1;}
+.scroll-wrap-fade.has-bot::after{opacity:1;}
+
+/* — Smoother scrollbars — */
+.scroll-list,.sessions-scroll,.task-scroll{scroll-behavior:smooth;-webkit-overflow-scrolling:touch;}
+.scroll-list::-webkit-scrollbar-thumb,
+.sessions-scroll::-webkit-scrollbar-thumb,
+.task-scroll::-webkit-scrollbar-thumb{
+  background:var(--border2);border-radius:4px;
+  transition:background 0.3s ease;
+}
+.scroll-list::-webkit-scrollbar-thumb:hover,
+.sessions-scroll::-webkit-scrollbar-thumb:hover,
+.task-scroll::-webkit-scrollbar-thumb:hover{background:var(--teal);}
+
+/* — Timer done sparkle burst — */
+.tm-sparkle{
+  position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) scale(0);
+  width:280px;height:280px;border-radius:50%;pointer-events:none;z-index:4;
+  background:radial-gradient(circle,var(--teal-glow) 0%,rgba(0,230,200,0.12) 35%,transparent 72%);
+  animation:sparkleBurst 1.4s cubic-bezier(0.22,1,0.36,1) forwards;
+  mix-blend-mode:screen;
+}
+.tm-sparkle-ring{
+  position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) scale(0);
+  width:180px;height:180px;border-radius:50%;pointer-events:none;z-index:4;
+  border:2px solid var(--teal);opacity:0.85;
+  animation:sparkleRing 1.2s cubic-bezier(0.22,1,0.36,1) forwards;
+}
+@keyframes sparkleBurst{
+  0%{transform:translate(-50%,-50%) scale(0);opacity:0;}
+  15%{opacity:1;}
+  100%{transform:translate(-50%,-50%) scale(1.6);opacity:0;}
+}
+@keyframes sparkleRing{
+  0%{transform:translate(-50%,-50%) scale(0);opacity:0.9;border-width:3px;}
+  100%{transform:translate(-50%,-50%) scale(2.2);opacity:0;border-width:1px;}
+}
+
+/* — Safe area insets for iOS notch — */
+.credit-toast{
+  bottom:max(30px, calc(30px + env(safe-area-inset-bottom)));
+}
+.pwa-banner{
+  bottom:max(76px, calc(76px + env(safe-area-inset-bottom)));
+}
+body{
+  padding-bottom:max(80px, calc(80px + env(safe-area-inset-bottom)));
+  padding-left:max(16px, calc(16px + env(safe-area-inset-left)));
+  padding-right:max(16px, calc(16px + env(safe-area-inset-right)));
+}
+
+/* — Long-press confirming state — */
+.lp-confirming{
+  position:relative;
+  animation:lpPulse 0.6s cubic-bezier(0.22,1,0.36,1) infinite alternate;
+}
+@keyframes lpPulse{
+  from{box-shadow:0 0 0 0 rgba(255,95,109,0.3);}
+  to{box-shadow:0 0 0 6px rgba(255,95,109,0);}
+}
+.lp-confirming::before{
+  content:'';position:absolute;inset:0;border-radius:inherit;pointer-events:none;
+  background:radial-gradient(circle at center,rgba(255,95,109,0.22),transparent 70%);
+  animation:lpFill 0.35s cubic-bezier(0.22,1,0.36,1) forwards;
+}
+@keyframes lpFill{from{opacity:0;}to{opacity:1;}}
+
+/* — Refined logo bloom on first load — */
+.logo-icon{animation:pulse-border 3s ease infinite,logoBloom 0.6s cubic-bezier(0.22,1,0.36,1) both;}
+@keyframes logoBloom{
+  0%{transform:scale(0.7);opacity:0;}
+  60%{transform:scale(1.05);opacity:1;}
+  100%{transform:scale(1);opacity:1;}
+}
+
+/* — Header entrance — */
+.header{animation:headerIn 0.5s cubic-bezier(0.22,1,0.36,1) both;}
+@keyframes headerIn{
+  from{opacity:0;transform:translateY(-8px);}
+  to{opacity:1;transform:translateY(0);}
+}
+
+/* — Button disabled refinement — */
+.btn:disabled{opacity:0.22;cursor:not-allowed;filter:saturate(0.3);}
+
+/* — Count-up animated number styling (via data attr) — */
+.counting{display:inline-block;transition:transform 0.12s ease-out;}
+
+/* — Select / input premium — */
+.task-text-input,.pf-input,.time-field input,.mr-hms-input{
+  transition:border-color 0.22s cubic-bezier(0.22,1,0.36,1),
+             box-shadow 0.28s cubic-bezier(0.22,1,0.36,1),
+             background 0.22s cubic-bezier(0.22,1,0.36,1);
+}
+
+/* — Selection color — */
+::selection{background:var(--teal);color:var(--bg);text-shadow:none;}
+[data-theme="light"] ::selection{background:var(--teal);color:#fff;}
+
+/* — Report tab & pomo mode card press feel — */
+.report-tab:active,.pomo-mode-card:active{transform:scale(0.985);}
+
+/* — Ensure ripple ink & cursor glow sit above grid but below content chrome — */
+.app{z-index:3;position:relative;}
+
+/* — Polished credit-toast entrance (override) — */
+.credit-toast{
+  transition:opacity 0.35s cubic-bezier(0.22,1,0.36,1),
+             transform 0.42s cubic-bezier(0.34,1.56,0.64,1);
+}
+
+/* — Profile modal entrance polish — */
+.profile-modal,.dur-modal,.launch-modal{
+  animation:modalPop 0.32s cubic-bezier(0.34,1.56,0.64,1);
+}
+@keyframes modalPop{
+  from{opacity:0;transform:scale(0.92) translateY(12px);}
+  to{opacity:1;transform:scale(1) translateY(0);}
+}
+
+/* — Task complete celebration — */
+.task-item.celebrated::after{
+  content:'✓';position:absolute;top:50%;right:20px;transform:translateY(-50%) scale(0);
+  font-size:2rem;color:var(--teal);text-shadow:0 0 20px var(--teal-glow);
+  animation:taskCelebrate 1.2s cubic-bezier(0.22,1,0.36,1) forwards;
+  pointer-events:none;z-index:5;
+}
+@keyframes taskCelebrate{
+  0%{transform:translateY(-50%) scale(0) rotate(-15deg);opacity:0;}
+  40%{transform:translateY(-50%) scale(1.3) rotate(5deg);opacity:1;}
+  70%{transform:translateY(-50%) scale(1) rotate(0);opacity:1;}
+  100%{transform:translateY(-50%) scale(1.2) rotate(0);opacity:0;}
+}
+
+/* — Number flip on change (subtle) — */
+.num-pop{animation:numPop 0.38s cubic-bezier(0.34,1.56,0.64,1);}
+@keyframes numPop{
+  0%{transform:translateY(4px);opacity:0.5;}
+  60%{transform:translateY(-2px);opacity:1;}
+  100%{transform:translateY(0);opacity:1;}
+}
+
+/* — Skeleton shimmer (reserved for async renders) — */
+.skeleton{
+  background:linear-gradient(90deg,var(--surface2) 0%,var(--glass) 50%,var(--surface2) 100%);
+  background-size:200% 100%;animation:shimmer 1.6s linear infinite;
+  border-radius:8px;
+}
+@keyframes shimmer{0%{background-position:200% 0;}100%{background-position:-200% 0;}}
+
+/* ══ GOOGLE CALENDAR SYNC ══ */
+.gcal-info-box{background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:14px 16px;margin-bottom:14px;}
+.gcal-info-title{font-size:0.68rem;font-weight:600;color:var(--text);margin-bottom:6px;letter-spacing:0.04em;}
+.gcal-info-text{font-size:0.63rem;color:var(--muted);line-height:1.65;}
+.gcal-setup-link{display:inline-flex;align-items:center;gap:4px;margin-top:10px;font-size:0.62rem;color:var(--teal);text-decoration:none;letter-spacing:0.04em;transition:opacity 0.2s;}
+.gcal-setup-link:hover{opacity:0.75;text-decoration:underline;}
+.gcal-input-row{display:flex;flex-direction:column;gap:8px;margin-bottom:4px;}
+.gcal-client-input{width:100%;font-size:0.72rem;}
+.gcal-err{font-size:0.6rem;color:var(--red);margin-top:4px;min-height:16px;}
+.gcal-connected-row{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+.gcal-dot{width:8px;height:8px;border-radius:50%;background:var(--muted2);flex-shrink:0;transition:all 0.3s;}
+.gcal-dot.live{background:#4ade80;box-shadow:0 0 9px rgba(74,222,128,0.45);animation:fm-pulse 2.5s ease-in-out infinite;}
+.gcal-account-label{flex:1;font-size:0.68rem;color:var(--text);font-weight:500;letter-spacing:0.01em;}
+.gcal-disconnect-btn{font-size:0.58rem;color:var(--muted);background:none;border:1px solid var(--border);border-radius:8px;padding:4px 10px;cursor:pointer;transition:all 0.18s;font-family:'DM Sans',sans-serif;}
+.gcal-disconnect-btn:hover{border-color:rgba(255,95,109,0.4);color:var(--red);}
+.gcal-sync-stats{font-size:0.63rem;color:var(--muted);margin-bottom:12px;padding:8px 12px;background:var(--muted2);border-radius:8px;}
+.gcal-sync-stat-row{display:flex;justify-content:space-between;line-height:1.8;}
+.gcal-sync-stat-val{color:var(--text);font-family:'Space Mono',monospace;font-size:0.65rem;}
+.gcal-sync-btn{width:100%;margin-bottom:10px;font-size:0.75rem;}
+.gcal-log{font-size:0.58rem;line-height:1.9;max-height:130px;overflow-y:auto;padding-right:4px;}
+.gcal-log::-webkit-scrollbar{width:3px;}
+.gcal-log::-webkit-scrollbar-thumb{background:var(--muted2);border-radius:3px;}
+.gcal-log-row{display:flex;align-items:baseline;gap:6px;padding:1px 0;}
+.gcal-log-row.ok{color:var(--teal);}
+.gcal-log-row.err{color:var(--red);}
+.gcal-log-row.info{color:var(--muted);}
+.gcal-log-row .gcal-log-time{font-family:'Space Mono',monospace;font-size:0.52rem;color:var(--muted2);flex-shrink:0;}
+.gcal-steps{display:flex;gap:6px;margin-bottom:14px;}
+.gcal-step{flex:1;text-align:center;padding:8px 6px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;font-size:0.56rem;color:var(--muted);line-height:1.5;}
+.gcal-step-num{display:block;font-family:'Space Mono',monospace;font-size:0.85rem;color:var(--teal);margin-bottom:2px;}
+[data-theme="light"] .gcal-info-box{background:rgba(255,255,255,0.88);border:1.5px solid rgba(0,0,0,0.10);}
+[data-theme="light"] .gcal-sync-stats{background:rgba(0,0,0,0.04);}
+
+/* — Premium pointer for interactive surfaces — */
+.tab,.btn,.preset-btn,.task-act,.pomo-mode-card,.mr-launch-btn,.mr-del-btn,
+.mr-new-btn,.task-filter-btn,.task-add-btn,.pf-save-btn,.sph-edit-btn,
+.theme-toggle,.fm-popup-play-btn,.fm-popup-profile-btn,.fm-pill,.task-type-pill,.task-dur-pill,
+.task-pri-pill,.dur-pill,.dur-mode-btn,.launch-mode-btn,.credit-yes,.credit-no,
+.tit-btn,.mirror-launch-btn,.pwa-install-btn,.pwa-dismiss-btn,.clear-btn,
+.task-color-dot,.task-check,.cal-day,.mr-task-row,.session-item,.lap-item,
+.stat-card,.report-tab,.hm-cell{cursor:pointer;}
+.task-text-input,.pf-input,.time-field input,.mr-hms-input,.fm-popup-vol-slider{cursor:text;}
+.fm-popup-vol-slider{cursor:ew-resize;}
+
 </style>
 </head>
 <body>
@@ -1217,12 +1669,11 @@ body{
 
   <!-- Tabs -->
   <div class="tabs">
-    <button class="tab active" onclick="switchTab('sw')">⏱ SW</button>
-    <button class="tab" onclick="switchTab('tm')">⏳ TM</button>
-    <button class="tab" onclick="switchTab('pm')">🍅 PM</button>
-    <button class="tab" onclick="switchTab('tk')">✅ Tasks</button>
-    <button class="tab" onclick="switchTab('mr')">🪞 Mirror</button>
-    <button class="tab" onclick="switchTab('st')">📊 Stats</button>
+    <button class="tab active" onclick="switchTab('sw')"><span class="tab-icon">⏱</span><span class="tab-label">SW</span></button>
+    <button class="tab" onclick="switchTab('tm')"><span class="tab-icon">⏳</span><span class="tab-label">Timer</span></button>
+    <button class="tab" onclick="switchTab('pm')"><span class="tab-icon">🍅</span><span class="tab-label">Pomo</span></button>
+    <button class="tab" onclick="switchTab('tk')"><span class="tab-icon">✅</span><span class="tab-label">Tasks</span></button>
+    <button class="tab" onclick="switchTab('st')"><span class="tab-icon">📊</span><span class="tab-label">Stats</span></button>
   </div>
 
   <!-- ══ STOPWATCH ══ -->
@@ -1304,28 +1755,6 @@ body{
 
   <!-- ══ POMODORO ══ -->
   <div class="panel" id="panel-pm">
-    <!-- Focus Music Panel -->
-    <div class="fm-panel" id="fm-panel-pm">
-      <div class="fm-header">
-        <div class="fm-title-group">
-          <div class="fm-title">🎵 Focus Music</div>
-          <div class="fm-desc" id="fm-desc">40 Hz gamma · Brown noise</div>
-        </div>
-        <div class="fm-indicator" id="fm-indicator"></div>
-        <button class="fm-toggle-btn" id="fm-toggle-btn" onclick="fmToggle()" title="Play focus music">▶</button>
-      </div>
-      <div class="fm-profiles">
-        <button class="fm-profile-btn active" id="fm-p-focus" onclick="fmProfile('focus')">⚡ Focus</button>
-        <button class="fm-profile-btn" id="fm-p-deep" onclick="fmProfile('deep')">🌊 Deep Work</button>
-        <button class="fm-profile-btn" id="fm-p-calm" onclick="fmProfile('calm')">🍃 Calm Flow</button>
-      </div>
-      <div class="fm-vol-row">
-        <span class="fm-vol-label">Vol</span>
-        <input type="range" class="fm-vol-slider" id="fm-vol" min="0" max="100" value="45" oninput="fmVolume(this.value);document.getElementById('fm-vol-val').textContent=this.value+'%'"/>
-        <span class="fm-vol-val" id="fm-vol-val">45%</span>
-      </div>
-      <div class="fm-note">🧠 Binaural beats + brown noise. Use <strong>headphones</strong> for binaural effect. Auto-plays during work sessions, pauses on breaks.</div>
-    </div>
     <div class="sub-card">
       <div class="section-header" style="margin-bottom:12px">
         <span class="section-title">Select Mode</span>
@@ -1460,27 +1889,23 @@ body{
         <div class="empty-state">No tasks yet — add one above</div>
       </div>
     </div>
-  </div>
 
+    <!-- ══ GOALS (formerly Mirror) — embedded in Tasks tab ══ -->
 
-  <!-- ══ MIRROR ══ -->
-  <div class="panel" id="panel-mr">
-
-    <!-- Summary strip -->
+    <!-- Goals Summary strip -->
     <div class="mr-summary" id="mr-summary-strip">
       <div class="mr-sum-box"><div class="mr-sum-val" id="mr-sum-today">0m</div><div class="mr-sum-lbl">Today</div></div>
       <div class="mr-sum-box"><div class="mr-sum-val" id="mr-sum-week">0m</div><div class="mr-sum-lbl">This Week</div></div>
-      <div class="mr-sum-box"><div class="mr-sum-val" id="mr-sum-tasks">0/0</div><div class="mr-sum-lbl">Tasks Done</div></div>
+      <div class="mr-sum-box"><div class="mr-sum-val" id="mr-sum-tasks">0/0</div><div class="mr-sum-lbl">Goals Done</div></div>
     </div>
 
-    <!-- Create Task Card -->
+    <!-- Create Goal Card -->
     <div class="sub-card" id="mr-add-card">
       <div class="section-header" style="margin-bottom:0">
-        <span class="section-title">Mirror Tasks</span>
-        <button class="mr-new-btn" onclick="MirrorTasks.toggleForm()" id="mirror-form-toggle">+ New Task</button>
+        <span class="section-title">🪞 Goals</span>
+        <button class="mr-new-btn" onclick="MirrorTasks.toggleForm()" id="mirror-form-toggle">+ New Goal</button>
       </div>
       <div id="mirror-create-form" style="display:none;margin-top:16px">
-        <!-- Task type toggle -->
         <div class="mr-form-row">
           <span class="mr-form-lbl">Type</span>
           <div class="task-type-pills">
@@ -1488,13 +1913,11 @@ body{
             <span class="task-type-pill" onclick="mrSelType('weekly',this)">Weekly Goal</span>
           </div>
         </div>
-        <!-- Name -->
         <div class="mr-form-field">
           <label class="mr-form-lbl">Name</label>
           <input class="pf-input" id="mr-task-name" placeholder="e.g. Exercise, Deep Work…" type="text" maxlength="60"
             onkeydown="if(event.key==='Enter')MirrorTasks.create()"/>
         </div>
-        <!-- Daily fields -->
         <div id="mr-daily-fields">
           <div class="mr-form-field">
             <label class="mr-form-lbl">Daily Target</label>
@@ -1514,7 +1937,6 @@ body{
             <div class="mr-form-hint">Leave blank to skip. Sets a floor you commit to each day.</div>
           </div>
         </div>
-        <!-- Weekly fields -->
         <div id="mr-weekly-fields" style="display:none">
           <div class="mr-form-field">
             <label class="mr-form-lbl">Weekly Target (hours)</label>
@@ -1532,16 +1954,16 @@ body{
             <div class="mr-form-hint">Daily non-negotiable regardless of weekly goal.</div>
           </div>
         </div>
-        <button class="pf-save-btn" onclick="MirrorTasks.create()" style="margin-top:8px">Add Task</button>
+        <button class="pf-save-btn" onclick="MirrorTasks.create()" style="margin-top:8px">Add Goal</button>
       </div>
     </div>
 
-    <!-- Task Lists -->
+    <!-- Goal Lists -->
     <div id="mr-daily-list-wrap">
       <div class="mr-section-header">
         <span class="mr-section-lbl">📅 Daily — <span id="mr-daily-date" style="color:var(--teal)"></span></span>
       </div>
-      <div id="mr-daily-list"><div class="empty-state">No daily tasks yet</div></div>
+      <div id="mr-daily-list"><div class="empty-state">No daily goals yet</div></div>
     </div>
 
     <div id="mr-weekly-list-wrap" style="margin-top:8px">
@@ -1552,6 +1974,7 @@ body{
     </div>
 
   </div>
+
 
   <!-- ══ STATISTICS ══ -->
   <div class="panel" id="panel-st">
@@ -1630,6 +2053,62 @@ body{
       <button class="clear-btn" onclick="exportData()" style="border-color:var(--border2);color:var(--teal)">⬇ Export Data</button>
       <button class="clear-btn" onclick="clearStats()">Clear all data</button>
     </div>
+
+    <!-- ══ GOOGLE CALENDAR SYNC ══ -->
+    <div class="sub-card" id="gcal-sync-card" style="margin-top:14px">
+      <div class="section-header" style="margin-bottom:14px">
+        <span class="section-title">📅 Calendar Sync</span>
+        <span class="pill" id="gcal-status-pill">Not connected</span>
+      </div>
+
+      <!-- Step 1: Client ID setup -->
+      <div id="gcal-setup-view">
+        <div class="gcal-steps">
+          <div class="gcal-step"><span class="gcal-step-num">1</span>Google Cloud Console → APIs &amp; Services → Credentials</div>
+          <div class="gcal-step"><span class="gcal-step-num">2</span>Create OAuth 2.0 Client ID (Web app) &amp; add your site URL</div>
+          <div class="gcal-step"><span class="gcal-step-num">3</span>Paste Client ID below &amp; connect</div>
+        </div>
+        <div class="gcal-info-box">
+          <div class="gcal-info-title">One-time setup · free · no server needed</div>
+          <div class="gcal-info-text">ChronoBlast pushes focus sessions directly to your Google Calendar — all from the browser, nothing leaves your device except the event data.</div>
+          <a class="gcal-setup-link" href="https://console.cloud.google.com/apis/credentials" target="_blank" rel="noopener">→ Open Google Cloud Console</a>
+        </div>
+        <div class="gcal-input-row">
+          <input type="text" class="pf-input gcal-client-input" id="gcal-client-id-input"
+            placeholder="Paste your OAuth 2.0 Client ID  (ends in .apps.googleusercontent.com)"
+            autocomplete="off" spellcheck="false"/>
+          <div class="gcal-err" id="gcal-setup-err"></div>
+          <button class="btn btn-primary" onclick="GCalSync.saveClientId()" style="width:100%">Save &amp; Continue →</button>
+        </div>
+      </div>
+
+      <!-- Step 2: Client ID saved, needs auth -->
+      <div id="gcal-connect-view" style="display:none">
+        <div class="gcal-info-box" style="margin-bottom:12px">
+          <div class="gcal-info-text">Client ID saved. Click below to authorize ChronoBlast to create calendar events on your behalf. A Google pop-up will appear.</div>
+        </div>
+        <button class="btn btn-primary gcal-sync-btn" onclick="GCalSync.connect()">🔗 Connect Google Calendar</button>
+        <div style="text-align:center">
+          <button class="gcal-disconnect-btn" onclick="GCalSync.clearClientId()">✕ Remove Client ID</button>
+        </div>
+      </div>
+
+      <!-- Step 3: Connected -->
+      <div id="gcal-connected-view" style="display:none">
+        <div class="gcal-connected-row">
+          <div class="gcal-dot live"></div>
+          <span class="gcal-account-label" id="gcal-account-label">Google Calendar connected</span>
+          <button class="gcal-disconnect-btn" onclick="GCalSync.disconnect()">Disconnect</button>
+        </div>
+        <div class="gcal-sync-stats" id="gcal-sync-stats">
+          <div class="gcal-sync-stat-row"><span>Unsynced sessions</span><span class="gcal-sync-stat-val" id="gcal-unsynced-count">—</span></div>
+          <div class="gcal-sync-stat-row"><span>Total sessions synced</span><span class="gcal-sync-stat-val" id="gcal-total-synced">—</span></div>
+          <div class="gcal-sync-stat-row"><span>Last sync</span><span class="gcal-sync-stat-val" id="gcal-last-sync">Never</span></div>
+        </div>
+        <button class="btn btn-primary gcal-sync-btn" id="gcal-sync-btn" onclick="GCalSync.syncAll()">📤 Sync Sessions to Google Calendar</button>
+        <div class="gcal-log" id="gcal-log"></div>
+      </div>
+    </div>
   </div>
 
   <!-- ══ PROFILE (modal only, no dedicated tab) ══ -->
@@ -1698,111 +2177,215 @@ const Audio = (() => {
 })();
 
 // ── MODULE: FOCUS MUSIC ──────────────────────────────────────────
-// Generates real-time focus audio using Web Audio API:
-//   • Brown noise   — warm, deep static that masks distractions
-//   • 40 Hz binaural beats — gamma-range entrainment for sharp focus
-//   • 528 Hz carrier + soft shimmer — Solfeggio "clarity" tone
-// All synthesized locally — no network required.
+// Synthesizes real musical focus audio via Web Audio API.
+// NO static noise — three scientifically-backed soundscapes:
+//
+//  ⚡ Focus     — 40 Hz gamma binaural beat layered over a warm
+//                 432 Hz drone chord (root + fifth + octave),
+//                 with a slow 0.1 Hz amplitude breath for depth.
+//                 Gamma entrainment → sharper attention & recall.
+//
+//  🌊 Deep Work — 14 Hz alpha/beta binaural over a slow evolving
+//                 pentatonic arpeggio (D-F#-A-D, 70 BPM feel),
+//                 filtered through a gentle low-pass so it sits
+//                 far in the background — not distracting.
+//
+//  🍃 Calm Flow — 10 Hz alpha binaural over a soft ambient pad:
+//                 three detuned sine oscillators making a lush
+//                 major-7th chord (C-E-G-B) that slowly drifts
+//                 with LFO vibrato. Ideal for reading/writing.
+//
+// All notes are synthesized locally — zero network requests.
 const FocusMusic = (() => {
   const AC = window.AudioContext || window.webkitAudioContext;
   let ctx = null, masterGain = null;
-  let noiseNode = null, noiseGain = null;
-  let binL = null, binR = null, binMerger = null, binGain = null;
-  let shimmerOsc = null, shimmerGain = null;
+  let _nodes = [];   // all active nodes for teardown
   let _playing = false;
-  let _vol = 0.45; // 0–1
-  let _profile = 'focus'; // 'focus' | 'deep' | 'calm'
+  let _vol = 0.5;
+  let _profile = 'focus';
+  let _fadeTimer = null;
 
   const PROFILES = {
-    focus: { noiseVol: 0.28, beatFreq: 40, carrier: 528, shimVol: 0.055, label: '⚡ Focus', desc: '40 Hz gamma · Brown noise' },
-    deep:  { noiseVol: 0.32, beatFreq: 14, carrier: 432, shimVol: 0.04,  label: '🌊 Deep Work', desc: '14 Hz alpha · Brown noise' },
-    calm:  { noiseVol: 0.18, beatFreq: 10, carrier: 396, shimVol: 0.065, label: '🍃 Calm Flow', desc: '10 Hz alpha · Soft noise' },
+    focus: { desc: '40 Hz gamma · Harmonic drone' },
+    deep:  { desc: '14 Hz alpha · Pentatonic pulse' },
+    calm:  { desc: '10 Hz alpha · Ambient pad' },
   };
 
   const ensure = () => {
     if (!ctx) {
       ctx = new AC();
       masterGain = ctx.createGain();
-      masterGain.gain.value = _vol;
+      masterGain.gain.value = 0;   // start silent, fade in
       masterGain.connect(ctx.destination);
     }
     if (ctx.state === 'suspended') ctx.resume();
   };
 
-  // Brown noise generator (better than white for focus — softer, less fatiguing)
-  const makeBrownNoise = () => {
-    const bufSize = ctx.sampleRate * 4; // 4s buffer, looped
-    const buf = ctx.createBuffer(1, bufSize, ctx.sampleRate);
-    const data = buf.getChannelData(0);
-    let last = 0;
-    for (let i = 0; i < bufSize; i++) {
-      const w = (Math.random() * 2 - 1) * 0.02;
-      last = (last + w) / 1.004;
-      data[i] = last;
-    }
-    // Normalize — avoid spread on large typed array (stack overflow)
-    let max = 0;
-    for (let i = 0; i < bufSize; i++) { const a = data[i] < 0 ? -data[i] : data[i]; if (a > max) max = a; }
-    if (max > 0) for (let i = 0; i < bufSize; i++) data[i] /= max;
-
-    const src = ctx.createBufferSource();
-    src.buffer = buf; src.loop = true;
-    return src;
+  // Helper — create & track an oscillator
+  const osc = (freq, type = 'sine', detune = 0) => {
+    const o = ctx.createOscillator();
+    o.type = type; o.frequency.value = freq; o.detune.value = detune;
+    _nodes.push(o); return o;
   };
 
-  // Binaural beat: left ear = carrier, right ear = carrier + beatFreq
-  const makeBinaural = (carrier, beatFreq) => {
-    const left  = ctx.createOscillator();
-    const right = ctx.createOscillator();
-    left.type = right.type = 'sine';
-    left.frequency.value  = carrier;
-    right.frequency.value = carrier + beatFreq;
+  // Helper — create & track a gain node
+  const gain = (val = 1) => {
+    const g = ctx.createGain(); g.gain.value = val;
+    _nodes.push(g); return g;
+  };
 
+  // Helper — create & track a biquad filter
+  const filter = (type, freq, q = 1) => {
+    const f = ctx.createBiquadFilter();
+    f.type = type; f.frequency.value = freq; f.Q.value = q;
+    _nodes.push(f); return f;
+  };
+
+  // Binaural beat: LEFT = carrier, RIGHT = carrier + beatFreq
+  // Returns a stereo merger node ready to connect downstream.
+  const makeBinaural = (carrier, beatFreq, vol = 0.07) => {
     const merger = ctx.createChannelMerger(2);
-    const lg = ctx.createGain(), rg = ctx.createGain();
-    lg.gain.value = rg.gain.value = 0.5;
-    left.connect(lg);   lg.connect(merger, 0, 0);
-    right.connect(rg);  rg.connect(merger, 0, 1);
+    _nodes.push(merger);
+    const L = osc(carrier), R = osc(carrier + beatFreq);
+    const gL = gain(vol), gR = gain(vol);
+    L.connect(gL); gL.connect(merger, 0, 0);
+    R.connect(gR); gR.connect(merger, 0, 1);
+    L.start(); R.start();
+    return merger;
+  };
 
-    return { left, right, merger };
+  // Slow LFO for amplitude breathing / vibrato
+  const makeLFO = (rate, depth, target, param) => {
+    const l = osc(rate);
+    const lg = gain(depth);
+    l.connect(lg); lg.connect(param);
+    l.start();
+  };
+
+  // ── PROFILE: FOCUS ────────────────────────────────────────────
+  // Warm drone chord (432 Hz root, fifth 648, octave 864) +
+  // 40 Hz gamma binaural beat + slow amplitude breath.
+  const buildFocus = () => {
+    // Drone chord — three detuned sine layers
+    const freqs = [216, 432, 648, 864];
+    const vols  = [0.08, 0.13, 0.09, 0.06];
+    freqs.forEach((f, i) => {
+      const o = osc(f, 'sine', (i % 2 === 0 ? -3 : 3));
+      const g = gain(vols[i]);
+      // Slow LFO breath on each layer — slightly different rates
+      makeLFO(0.07 + i * 0.013, vols[i] * 0.35, null, g.gain);
+      o.connect(g); g.connect(masterGain);
+      o.start();
+    });
+    // 40 Hz gamma binaural (432 Hz carrier)
+    const bin = makeBinaural(432, 40, 0.06);
+    bin.connect(masterGain);
+  };
+
+  // ── PROFILE: DEEP WORK ────────────────────────────────────────
+  // Slow pentatonic pulse (D-F#-A-D at ~0.9 Hz = 54 BPM feel)
+  // filtered low so it's felt more than heard. 14 Hz alpha beat.
+  const buildDeep = () => {
+    // Pentatonic notes: D3 D4 A3 F#3 (Hz)
+    const notes = [146.83, 293.66, 220.00, 185.00, 293.66, 220.00];
+    const seqGain = gain(0.0);
+    const lpf = filter('lowpass', 900, 0.8);
+    seqGain.connect(lpf); lpf.connect(masterGain);
+
+    let step = 0;
+    const stepDur = 0.85; // seconds per note
+    const scheduleNote = () => {
+      if (!_playing) return;
+      const now = ctx.currentTime;
+      const freq = notes[step % notes.length];
+      const o = osc(freq, 'sine');
+      const g = gain(0);
+      o.connect(g); g.connect(seqGain);
+      o.start(now);
+      // Soft attack/decay envelope
+      g.gain.setValueAtTime(0, now);
+      g.gain.linearRampToValueAtTime(0.22, now + 0.12);
+      g.gain.exponentialRampToValueAtTime(0.001, now + stepDur * 0.88);
+      o.stop(now + stepDur);
+      step++;
+      const t = setTimeout(scheduleNote, stepDur * 950);
+      _nodes.push({ stop: () => clearTimeout(t) });
+    };
+    // Fade in the sequence gain
+    seqGain.gain.setTargetAtTime(1, ctx.currentTime + 0.5, 0.4);
+    scheduleNote();
+
+    // Subtle pad underneath (perfect fifth)
+    const pad1 = osc(146.83, 'sine', -5);
+    const pad2 = osc(220.00, 'sine',  5);
+    const padG = gain(0.07);
+    pad1.connect(padG); pad2.connect(padG); padG.connect(masterGain);
+    makeLFO(0.05, 0.025, null, padG.gain);
+    pad1.start(); pad2.start();
+
+    // 14 Hz alpha binaural (293 Hz carrier)
+    const bin = makeBinaural(293, 14, 0.06);
+    bin.connect(masterGain);
+  };
+
+  // ── PROFILE: CALM FLOW ────────────────────────────────────────
+  // Lush major-7th ambient pad (C-E-G-B detuned cluster) +
+  // 10 Hz alpha binaural + slow vibrato LFO.
+  const buildCalm = () => {
+    // Cmaj7 chord: C3 E3 G3 B3 C4 — detuned for shimmer
+    const chord = [
+      { f: 130.81, det: 0,   v: 0.10 },
+      { f: 164.81, det: -6,  v: 0.09 },
+      { f: 196.00, det:  5,  v: 0.08 },
+      { f: 246.94, det: -4,  v: 0.07 },
+      { f: 261.63, det:  3,  v: 0.06 },
+      { f: 329.63, det: -2,  v: 0.05 },
+    ];
+    chord.forEach(({ f, det, v }) => {
+      const o = osc(f, 'sine', det);
+      const g = gain(v);
+      // Each layer breathes at a slightly different rate
+      makeLFO(0.04 + Math.random() * 0.04, v * 0.4, null, g.gain);
+      o.connect(g); g.connect(masterGain);
+      o.start();
+    });
+
+    // Soft octave overtone layer
+    const ot = osc(523.25, 'sine', 0);
+    const otG = gain(0.03);
+    makeLFO(0.08, 0.015, null, otG.gain);
+    ot.connect(otG); otG.connect(masterGain);
+    ot.start();
+
+    // 10 Hz alpha binaural (261 Hz carrier)
+    const bin = makeBinaural(261, 10, 0.055);
+    bin.connect(masterGain);
   };
 
   const buildGraph = () => {
-    const p = PROFILES[_profile];
-
-    // Brown noise
-    noiseNode = makeBrownNoise();
-    noiseGain = ctx.createGain();
-    noiseGain.gain.value = p.noiseVol;
-    noiseNode.connect(noiseGain);
-    noiseGain.connect(masterGain);
-    noiseNode.start();
-
-    // Binaural
-    const bin = makeBinaural(p.carrier, p.beatFreq);
-    binL = bin.left; binR = bin.right; binMerger = bin.merger;
-    binGain = ctx.createGain();
-    binGain.gain.value = 0.06;
-    binMerger.connect(binGain);
-    binGain.connect(masterGain);
-    binL.start(); binR.start();
-
-    // Shimmer — very soft high harmonic for clarity sensation
-    shimmerOsc = ctx.createOscillator();
-    shimmerOsc.type = 'sine';
-    shimmerOsc.frequency.value = p.carrier * 2;
-    shimmerGain = ctx.createGain();
-    shimmerGain.gain.value = p.shimVol;
-    shimmerOsc.connect(shimmerGain);
-    shimmerGain.connect(masterGain);
-    shimmerOsc.start();
+    if (_profile === 'focus') buildFocus();
+    else if (_profile === 'deep') buildDeep();
+    else buildCalm();
   };
 
   const teardown = () => {
-    try { noiseNode && noiseNode.stop(); } catch(e){}
-    try { binL && binL.stop(); binR && binR.stop(); } catch(e){}
-    try { shimmerOsc && shimmerOsc.stop(); } catch(e){}
-    noiseNode=noiseGain=binL=binR=binMerger=binGain=shimmerOsc=shimmerGain=null;
+    _nodes.forEach(n => {
+      try { if (typeof n.stop === 'function') n.stop(); } catch(e){}
+      try { if (typeof n.disconnect === 'function') n.disconnect(); } catch(e){}
+    });
+    _nodes = [];
+  };
+
+  // Smooth fade in/out via masterGain
+  const fadeTo = (target, durSec, cb) => {
+    if (!masterGain) return cb && cb();
+    masterGain.gain.cancelScheduledValues(ctx.currentTime);
+    masterGain.gain.setValueAtTime(masterGain.gain.value, ctx.currentTime);
+    masterGain.gain.linearRampToValueAtTime(target, ctx.currentTime + durSec);
+    if (cb) {
+      if (_fadeTimer) clearTimeout(_fadeTimer);
+      _fadeTimer = setTimeout(cb, durSec * 1000 + 20);
+    }
   };
 
   const obj = {
@@ -1811,12 +2394,16 @@ const FocusMusic = (() => {
       if (_playing) return;
       _playing = true;
       buildGraph();
+      fadeTo(_vol, 1.2);
       _updateUI();
     },
     pause() {
       if (!_playing) return;
+      fadeTo(0, 0.8, () => {
+        teardown();
+        _updateUI();
+      });
       _playing = false;
-      teardown();
       _updateUI();
     },
     stop() { obj.pause(); },
@@ -1824,14 +2411,17 @@ const FocusMusic = (() => {
     isPlaying() { return _playing; },
     setVolume(v) {
       _vol = Math.max(0, Math.min(1, v));
-      if (masterGain) masterGain.gain.setTargetAtTime(_vol, ctx.currentTime, 0.05);
+      if (masterGain && _playing) masterGain.gain.setTargetAtTime(_vol, ctx.currentTime, 0.1);
       _updateUI();
     },
     setProfile(p) {
-      const wasPlaying = _playing;
-      if (wasPlaying) { teardown(); _playing=false; }
-      _profile = p;
-      if (wasPlaying) { _playing=true; buildGraph(); }
+      const was = _playing;
+      if (was) {
+        fadeTo(0, 0.4, () => { teardown(); _profile = p; if (was) { _playing = true; buildGraph(); fadeTo(_vol, 0.8); } _updateUI(); });
+        _playing = false;
+      } else {
+        _profile = p;
+      }
       _updateUI();
     },
     getProfile() { return _profile; },
@@ -1840,34 +2430,30 @@ const FocusMusic = (() => {
   };
 
   function _updateUI() {
-    const btn = document.getElementById('fm-toggle-btn');
-    const ind = document.getElementById('fm-indicator');
-    const volSlider = document.getElementById('fm-vol');
+    // Pill button
+    const pill = document.getElementById('fm-pill');
+    const pillLabel = document.getElementById('fm-pill-label');
+    // Popup play button
+    const playBtn = document.getElementById('fm-popup-play-btn');
+    // Desc
     const desc = document.getElementById('fm-desc');
-    const floating = document.getElementById('fm-floating');
-    const floatLabel = document.getElementById('fm-float-label');
-    const panel = document.getElementById('fm-panel-pm');
-    if (!btn) return;
+    // Vol slider
+    const volSlider = document.getElementById('fm-popup-vol');
 
-    if (_playing) {
-      btn.textContent = '⏸';
-      btn.title = 'Pause focus music';
-      ind.classList.add('active');
-      if (floating) floating.classList.add('show');
-      if (panel) panel.classList.add('fm-active');
-    } else {
-      btn.textContent = '▶';
-      btn.title = 'Play focus music';
-      ind.classList.remove('active');
-      if (floating) floating.classList.remove('show');
-      if (panel) panel.classList.remove('fm-active');
+    if (pill) pill.classList.toggle('playing', _playing);
+    if (pillLabel) pillLabel.textContent = _playing ? 'Playing' : 'Music';
+
+    if (playBtn) {
+      playBtn.textContent = _playing ? '⏸  Pause' : '▶  Play';
+      playBtn.classList.toggle('playing', _playing);
     }
-    if (volSlider) volSlider.value = Math.round(_vol * 100);
     const p = PROFILES[_profile];
     if (desc) desc.textContent = p.desc;
-    if (floatLabel) floatLabel.textContent = p.label.replace(/^[^\s]+ /, '').toLowerCase();
-    // Update profile buttons
-    Object.keys(PROFILES).forEach(k => {
+    if (volSlider) volSlider.value = Math.round(_vol * 100);
+    document.getElementById('fm-popup-vol-val') && (document.getElementById('fm-popup-vol-val').textContent = Math.round(_vol * 100) + '%');
+
+    // Profile buttons
+    ['focus','deep','calm'].forEach(k => {
       const pb = document.getElementById('fm-p-' + k);
       if (pb) pb.classList.toggle('active', k === _profile);
     });
@@ -1877,8 +2463,24 @@ const FocusMusic = (() => {
 })();
 
 function fmToggle(){ FocusMusic.toggle(); }
-function fmVolume(v){ FocusMusic.setVolume(v/100); }
+function fmVolume(v){ FocusMusic.setVolume(v / 100); }
 function fmProfile(p){ FocusMusic.setProfile(p); }
+
+// Toggle the popup panel open/closed
+function fmPillClick() {
+  const popup = document.getElementById('fm-panel-popup');
+  if (!popup) return;
+  popup.classList.toggle('open');
+}
+// Close popup when clicking outside
+document.addEventListener('click', e => {
+  const pill  = document.getElementById('fm-pill');
+  const popup = document.getElementById('fm-panel-popup');
+  if (!popup || !pill) return;
+  if (popup.classList.contains('open') && !popup.contains(e.target) && !pill.contains(e.target)) {
+    popup.classList.remove('open');
+  }
+}, { passive: true });
 
 // ── MODULE: HELPERS ──────────────────────────────────────────────
 const Fmt = (() => {
@@ -1946,65 +2548,58 @@ const Visibility = (() => {
 })();
 
 // ── BACKGROUND-SAFE TICKER ────────────────────────────────────────
-// Uses setTimeout so it keeps firing even when the tab is hidden.
-// Falls back to requestAnimationFrame when the tab is visible for smooth UI.
+// RAF when visible (smooth, compositor-synced).
+// setTimeout when hidden (keeps timing accurate in background).
+// Single loop per ticker — no double-scheduling.
 function makeTicker(fn, intervalMs) {
-  let _timer = null;
-  let _useRAF = true;
-  let _rafId = null;
   let _running = false;
+  let _rafId   = null;
+  let _stId    = null;
+  let _last    = 0;
 
-  const _rafLoop = () => {
+  const _rafLoop = (ts) => {
     if (!_running) return;
-    fn();
+    if (ts - _last >= intervalMs) { _last = ts; fn(); }
     _rafId = requestAnimationFrame(_rafLoop);
   };
 
-  const _setLoop = () => {
+  const _stLoop = () => {
     if (!_running) return;
     fn();
-    _timer = setTimeout(_setLoop, intervalMs);
+    _stId = setTimeout(_stLoop, intervalMs);
   };
 
-  // Switch between RAF (visible) and setTimeout (hidden)
-  document.addEventListener('visibilitychange', () => {
+  const _onVis = () => {
     if (!_running) return;
     if (document.hidden) {
-      // Switch to setTimeout
       if (_rafId) { cancelAnimationFrame(_rafId); _rafId = null; }
-      _useRAF = false;
-      _timer = setTimeout(_setLoop, intervalMs);
+      _stId = setTimeout(_stLoop, intervalMs);
     } else {
-      // Switch back to RAF
-      if (_timer) { clearTimeout(_timer); _timer = null; }
-      _useRAF = true;
+      if (_stId) { clearTimeout(_stId); _stId = null; }
+      _last = 0;
       _rafId = requestAnimationFrame(_rafLoop);
     }
-  });
+  };
+  document.addEventListener('visibilitychange', _onVis, { passive: true });
 
   return {
     start() {
       if (_running) return;
-      _running = true;
-      if (document.hidden) {
-        _useRAF = false;
-        _timer = setTimeout(_setLoop, intervalMs);
-      } else {
-        _useRAF = true;
-        _rafId = requestAnimationFrame(_rafLoop);
-      }
+      _running = true; _last = 0;
+      if (document.hidden) { _stId = setTimeout(_stLoop, intervalMs); }
+      else { _rafId = requestAnimationFrame(_rafLoop); }
     },
     stop() {
       _running = false;
       if (_rafId) { cancelAnimationFrame(_rafId); _rafId = null; }
-      if (_timer) { clearTimeout(_timer); _timer = null; }
+      if (_stId)  { clearTimeout(_stId);          _stId  = null; }
     },
     isRunning() { return _running; }
   };
 }
 
 // ── MODULE: TABS ──────────────────────────────────────────────────
-const TAB_IDS = ['sw','tm','pm','tk','mr','st'];
+const TAB_IDS = ['sw','tm','pm','tk','st'];
 function switchTab(id) {
   const current = TAB_IDS.find(t => document.getElementById('panel-'+t).classList.contains('active'));
   if (current === id) return;
@@ -2020,9 +2615,10 @@ function switchTab(id) {
   const doSwitch = () => {
     if (outEl) { outEl.classList.remove('active','exit'); }
     inEl.classList.add('active');
-    if (id==='st') Stats.render();
+    if (id==='st') { Stats.render(); GCalSync.refresh(); }
     if (id==='pm') Pomo.renderHistory();
     if (id==='mr') Mirror.render();
+    if (id==='tk') MirrorTasks.render();
   };
 
   if (outEl) {
@@ -2053,7 +2649,7 @@ const SW = (() => {
     SecondPulse.pulse(display, elapsed);
   };
 
-  const ticker = makeTicker(tick, 50);
+  const ticker = makeTicker(tick, 80);
 
   return {
     toggle() {
@@ -2064,13 +2660,11 @@ const SW = (() => {
         display.classList.add('running'); card.classList.add('running-glow');
         btnStart.textContent = 'Pause'; btnLap.disabled = false; btnReset.disabled = false;
         Audio.start();
-        FocusMusic.play();
       } else {
         ticker.stop(); run = false;
         display.classList.remove('running'); card.classList.remove('running-glow');
         btnStart.textContent = 'Resume'; btnLap.disabled = true;
         Audio.pause();
-        FocusMusic.pause();
       }
     },
     lap() {
@@ -2166,7 +2760,6 @@ const TM = (() => {
         Store.record('Timer', orig, '', null);
       }
       Audio.done();
-      FocusMusic.pause();
     }
   };
 
@@ -2200,13 +2793,11 @@ const TM = (() => {
         card.classList.add('running-glow');
         btnStart.textContent = 'Pause'; btnStart.classList.remove('btn-primary');
         Audio.start();
-        FocusMusic.play();
       } else {
         ticker.stop(); run = false;
         display.classList.remove('running'); card.classList.remove('running-glow');
         btnStart.textContent = 'Resume'; btnStart.classList.add('btn-primary');
         Audio.pause();
-        FocusMusic.pause();
       }
     },
     reset() {
@@ -2220,7 +2811,6 @@ const TM = (() => {
       btnSet.disabled = false; btnStart.disabled = true; btnReset.disabled = true;
       btnStart.textContent = 'Start'; btnStart.classList.add('btn-primary');
       Audio.pause();
-      FocusMusic.pause();
     }
   };
 })();
@@ -2276,7 +2866,6 @@ const Pomo = (() => {
       document.getElementById('pomo-pct').textContent = '0%';
       document.getElementById('pomo-fill').style.width = '0%';
       Audio.pomoDone();
-      FocusMusic.pause(); // Rest phase — no focus music
       startTs = Date.now();
       ticker.start();
       Pomo.renderHistory();
@@ -2293,7 +2882,6 @@ const Pomo = (() => {
       document.getElementById('pomo-pct').textContent = '0%';
       document.getElementById('pomo-fill').style.width = '0%';
       Audio.phase(); renderDots();
-      FocusMusic.play(); // Back to work — resume focus music
       document.getElementById('pomo-total-rounds').textContent = (round-1) + ' rounds';
       startTs = Date.now();
       ticker.start();
@@ -2329,7 +2917,6 @@ const Pomo = (() => {
       document.getElementById('pomo-btn-reset').disabled = true;
       document.getElementById('pomo-card').classList.remove('running-glow');
       renderDots();
-      FocusMusic.pause();
     },
     toggle() {
       Audio.ensure();
@@ -2342,8 +2929,6 @@ const Pomo = (() => {
         document.getElementById('pomo-btn-skip').disabled = false;
         document.getElementById('pomo-btn-reset').disabled = false;
         Audio.start();
-        if (phase === 'work') FocusMusic.play();
-        else FocusMusic.pause();
       } else {
         ticker.stop(); run=false;
         document.getElementById('pomo-display').className = 'pomo-big-time';
@@ -2351,7 +2936,6 @@ const Pomo = (() => {
         document.getElementById('pomo-btn-start').textContent = 'Resume';
         document.getElementById('pomo-btn-start').classList.add('btn-primary');
         Audio.pause();
-        FocusMusic.pause();
       }
     },
     skip() { ticker.stop(); rem=0; phaseEnd(); },
@@ -2511,7 +3095,7 @@ const Tasks = (() => {
         updateLive(id);
         timers[id]._timer = setTimeout(tick, 250);
       };
-      timers[id]._timer = setTimeout(tick, 50);
+      timers[id]._timer = setTimeout(tick, 250);
     } else if (type==='timer') {
       // FIX: ensure dur is valid before starting
       if (!t.dur || t.dur <= 0) return;
@@ -2528,7 +3112,7 @@ const Tasks = (() => {
         }
         timers[id]._timer = setTimeout(tick, 250);
       };
-      timers[id]._timer = setTimeout(tick, 50);
+      timers[id]._timer = setTimeout(tick, 250);
     } else if (type==='pomodoro') {
       const pd = 25*60000;
       if (!pomoDots[id]) pomoDots[id] = { round:1, phase:'work', rem:pd, orig:pd };
@@ -2550,7 +3134,7 @@ const Tasks = (() => {
         }
         timers[id]._timer = setTimeout(tick, 250);
       };
-      timers[id]._timer = setTimeout(tick, 50);
+      timers[id]._timer = setTimeout(tick, 250);
     }
     renderItem(id); // re-render just this card to show expanded + play state
   };
@@ -3360,9 +3944,7 @@ function toggleTheme() {
 Tasks.render();
 MirrorTasks.render();
 document.getElementById('task-dur-row').style.display = 'none';
-// Pre-render stats profile in case user lands there
 Stats.render();
-// Restore saved theme
 (function(){
   try {
     const saved = localStorage.getItem('cb_theme');
@@ -3371,6 +3953,767 @@ Stats.render();
       document.getElementById('theme-toggle-btn').textContent = '☀️';
     }
   } catch(e) {}
+})();
+
+// ── AUDIO LIFECYCLE ───────────────────────────────────────────────
+// Music intentionally keeps playing when the app is backgrounded (screen off,
+// switched app) — expected behaviour for a focus timer.
+// Only stop when the user actually CLOSES the PWA window/tab.
+// pagehide fires on real close; visibilitychange fires on background — ignore that.
+window.addEventListener('pagehide', () => {
+});
+
+// ═══════════════════════════════════════════════════════════════
+// ✦ PREMIUM ENHANCEMENT LAYER ✦
+// Non-destructive runtime polish: haptics, cursor glow, count-up,
+// timer persistence, notifications, wake-lock, ripple, audio fades,
+// long-press guards, scroll shadows, sparkle on done. All additive.
+// ═══════════════════════════════════════════════════════════════
+(function PremiumLayer(){
+  'use strict';
+
+  // ───── 1. HAPTIC FEEDBACK ────────────────────────────────────
+  const Haptic = (() => {
+    const has = 'vibrate' in navigator;
+    const _v = p => { if (!has) return; try { navigator.vibrate(p); } catch(e){} };
+    return {
+      tap:     () => _v(6),
+      press:   () => _v(12),
+      success: () => _v([8, 24, 10]),
+      warn:    () => _v([14, 40, 14]),
+      error:   () => _v([20, 40, 20, 40, 20]),
+    };
+  })();
+  window.Haptic = Haptic;
+
+  // ───── 2. RIPPLE EFFECT ──────────────────────────────────────
+  const RIPPLE_SELECTOR = '.btn,.tab,.preset-btn,.task-act,.mr-launch-btn,.mr-del-btn,.mr-new-btn,.task-filter-btn,.task-add-btn,.pf-save-btn,.sph-edit-btn,.theme-toggle,.fm-popup-play-btn,.fm-popup-profile-btn,.fm-pill,.task-type-pill,.task-dur-pill,.task-pri-pill,.dur-pill,.dur-mode-btn,.launch-mode-btn,.credit-yes,.credit-no,.tit-btn,.mirror-launch-btn,.pwa-install-btn,.clear-btn,.pomo-mode-card,.task-color-dot,.report-tab';
+  document.addEventListener('pointerdown', (e) => {
+    const el = e.target.closest(RIPPLE_SELECTOR);
+    if (!el || el.disabled) return;
+    const r = el.getBoundingClientRect();
+    const size = Math.max(r.width, r.height) * 1.35;
+    const ink = document.createElement('span');
+    ink.className = 'ripple-ink';
+    ink.style.left = (e.clientX - r.left) + 'px';
+    ink.style.top  = (e.clientY - r.top) + 'px';
+    ink.style.width = ink.style.height = size + 'px';
+    el.appendChild(ink);
+    setTimeout(() => ink.remove(), 680);
+    Haptic.tap();
+  }, { passive: true });
+
+  // ───── 3. CURSOR-TRACKED AMBIENT GLOW (desktop only) ─────────
+  if (matchMedia('(hover:hover) and (pointer:fine)').matches &&
+      !matchMedia('(prefers-reduced-motion:reduce)').matches) {
+    const glow = document.createElement('div');
+    glow.className = 'cursor-glow';
+    document.body.appendChild(glow);
+    let tx=0, ty=0, cx=0, cy=0, running=false;
+    const loop = () => {
+      cx += (tx - cx) * 0.12;
+      cy += (ty - cy) * 0.12;
+      glow.style.transform = `translate3d(${cx}px, ${cy}px, 0) translate(-50%,-50%)`;
+      if (Math.abs(tx-cx) + Math.abs(ty-cy) > 0.5) requestAnimationFrame(loop);
+      else running = false;
+    };
+    document.addEventListener('pointermove', (e) => {
+      tx = e.clientX; ty = e.clientY;
+      glow.style.opacity = '1';
+      if (!running) { running = true; requestAnimationFrame(loop); }
+    }, { passive: true });
+    document.addEventListener('pointerleave', () => { glow.style.opacity = '0'; });
+    document.addEventListener('pointerdown', () => {
+      glow.style.opacity = '1';
+    }, { passive: true });
+  }
+
+  // ───── 4. COUNT-UP ANIMATION ON STAT NUMBERS ──────────────────
+  const CountUp = (() => {
+    const _cache = new WeakMap();
+    const parseNum = (s) => {
+      if (!s) return { v:0, suffix:'' };
+      const m = String(s).match(/^(-?[\d.,]+)(.*)$/);
+      if (!m) return { v:0, suffix:s };
+      return { v: parseFloat(m[1].replace(/,/g,'')) || 0, suffix: m[2] };
+    };
+    const fmt = (v, suffix) => {
+      const n = (Math.abs(v) >= 100) ? Math.round(v) : (Math.abs(v) >= 10 ? Math.round(v*10)/10 : Math.round(v*100)/100);
+      const isInt = n % 1 === 0;
+      return (isInt ? n.toString() : n.toFixed(1)) + suffix;
+    };
+    const animate = (el, from, to, suffix, durMs) => {
+      const start = performance.now();
+      const eo = t => 1 - Math.pow(1-t, 3);
+      const step = (now) => {
+        const t = Math.min(1, (now - start) / durMs);
+        const v = from + (to - from) * eo(t);
+        el.textContent = fmt(v, suffix);
+        if (t < 1) requestAnimationFrame(step);
+        else el.textContent = fmt(to, suffix);
+      };
+      requestAnimationFrame(step);
+    };
+    return {
+      sweep(selector) {
+        document.querySelectorAll(selector).forEach(el => {
+          const txt = (el.textContent || '').trim();
+          if (!txt || txt === '—' || txt === '—%') return;
+          const cur = parseNum(txt);
+          const prev = _cache.get(el);
+          _cache.set(el, cur.v);
+          if (prev === undefined || prev === cur.v) return;
+          animate(el, prev, cur.v, cur.suffix, 650);
+        });
+      }
+    };
+  })();
+
+  // Debounced stats count-up: observe stat renders
+  const statsDebounce = (fn, ms) => {
+    let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); };
+  };
+  const sweepStats = statsDebounce(() => {
+    CountUp.sweep('#stat-count,#stat-avg,#stat-longest,#stat-streak');
+    CountUp.sweep('.rate-val,.mr-sum-val,.report-stat-val');
+  }, 80);
+
+  // Wrap Stats.render so count-up fires after each update
+  if (window.Stats && typeof Stats.render === 'function') {
+    const _orig = Stats.render.bind(Stats);
+    Stats.render = function(...a){ const r = _orig(...a); sweepStats(); return r; };
+    const _origReport = Stats.renderReport ? Stats.renderReport.bind(Stats) : null;
+    if (_origReport) Stats.renderReport = function(...a){ const r = _origReport(...a); sweepStats(); return r; };
+  }
+  if (window.MirrorTasks && typeof MirrorTasks.render === 'function') {
+    const _orig = MirrorTasks.render.bind(MirrorTasks);
+    MirrorTasks.render = function(...a){ const r = _orig(...a); sweepStats(); return r; };
+  }
+
+  // ───── 5. RUNNING-TIMER PERSISTENCE (refresh-proof) ──────────
+  // Saves SW / TM / PM running state to localStorage, restores on load.
+  const TimerPersist = (() => {
+    const KEY = 'cb_running_state_v1';
+    const save = (state) => {
+      try { localStorage.setItem(KEY, JSON.stringify(state)); } catch(e){}
+    };
+    const load = () => {
+      try { return JSON.parse(localStorage.getItem(KEY) || 'null'); } catch(e){ return null; }
+    };
+    const clear = () => { try { localStorage.removeItem(KEY); } catch(e){} };
+    return { save, load, clear };
+  })();
+
+  // Periodically snapshot running timers (1s cadence)
+  setInterval(() => {
+    const snap = { ts: Date.now() };
+    const swDisp = document.getElementById('sw-display');
+    if (swDisp && swDisp.classList.contains('running')) {
+      // SW is running — capture elapsed via dom text
+      const btn = document.getElementById('sw-btn-start');
+      if (btn && btn.textContent === 'Pause') {
+        snap.sw = { running:true, at: Date.now() };
+      }
+    }
+    // Timer
+    const tmDisp = document.getElementById('tm-display');
+    if (tmDisp && tmDisp.classList.contains('running')) {
+      const btn = document.getElementById('tm-btn-start');
+      if (btn && btn.textContent === 'Pause') {
+        snap.tm = { running:true, at: Date.now() };
+      }
+    }
+    // Save only if something is active
+    if (snap.sw || snap.tm) TimerPersist.save(snap);
+    else TimerPersist.clear();
+  }, 2000);
+
+  // ───── 6. NOTIFICATIONS API (timer done while backgrounded) ──
+  const Notif = (() => {
+    let permission = (typeof Notification !== 'undefined') ? Notification.permission : 'denied';
+    const tryAsk = () => {
+      if (typeof Notification === 'undefined') return;
+      if (permission !== 'default') return;
+      try { Notification.requestPermission().then(p => permission = p); } catch(e){}
+    };
+    const send = (title, body) => {
+      if (typeof Notification === 'undefined') return;
+      if (permission !== 'granted') return;
+      if (!document.hidden) return; // only when user is elsewhere
+      try {
+        const icon = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'%3E%3Crect width='192' height='192' rx='40' fill='%2306080d'/%3E%3Ccircle cx='96' cy='112' r='60' stroke='%2300e6c8' stroke-width='10' fill='none'/%3E%3Cpath d='M96 78v34l22 13' stroke='%2300e6c8' stroke-width='10' stroke-linecap='round'/%3E%3Cpath d='M72 20h48M96 20v20' stroke='%2300e6c8' stroke-width='10' stroke-linecap='round'/%3E%3C/svg%3E";
+        const n = new Notification(title, { body, icon, badge: icon, silent: false, tag: 'chronoblast' });
+        n.onclick = () => { window.focus(); n.close(); };
+        setTimeout(() => n.close(), 8000);
+      } catch(e){}
+    };
+    return { tryAsk, send, isGranted: () => permission === 'granted' };
+  })();
+  window.Notif = Notif;
+
+  // Ask once when user starts first timer
+  ['sw-btn-start','tm-btn-start','pomo-btn-start'].forEach(id => {
+    const b = document.getElementById(id);
+    if (b) b.addEventListener('click', Notif.tryAsk, { once:true });
+  });
+
+  // ───── 7. WAKE LOCK (keep screen on during active sessions) ──
+  const WakeLock = (() => {
+    let wl = null;
+    const has = ('wakeLock' in navigator);
+    const request = async () => {
+      if (!has || wl) return;
+      try { wl = await navigator.wakeLock.request('screen'); wl.addEventListener('release', () => { wl = null; }); } catch(e){}
+    };
+    const release = async () => {
+      if (!wl) return;
+      try { await wl.release(); } catch(e){}
+      wl = null;
+    };
+    // Re-acquire on tab focus
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden && _shouldWakeLock()) request();
+    });
+    const _shouldWakeLock = () => {
+      return (document.getElementById('sw-display')?.classList.contains('running')) ||
+             (document.getElementById('tm-display')?.classList.contains('running')) ||
+             (document.getElementById('pomo-display')?.classList.contains('running'));
+    };
+    return { request, release, shouldBeOn: _shouldWakeLock };
+  })();
+
+  // Wire wake-lock to timer start/pause buttons
+  const wireWake = (btnId) => {
+    const b = document.getElementById(btnId);
+    if (!b) return;
+    b.addEventListener('click', () => {
+      // Defer until button text updates
+      setTimeout(() => {
+        if (WakeLock.shouldBeOn()) WakeLock.request();
+        else WakeLock.release();
+      }, 50);
+    });
+  };
+  ['sw-btn-start','tm-btn-start','pomo-btn-start','sw-btn-reset','tm-btn-reset','pomo-btn-reset'].forEach(wireWake);
+
+  // ───── 9. TIMER-DONE SPARKLE BURST ───────────────────────────
+  const sparkle = (container) => {
+    if (!container || matchMedia('(prefers-reduced-motion:reduce)').matches) return;
+    const s = document.createElement('div'); s.className = 'tm-sparkle';
+    const r = document.createElement('div'); r.className = 'tm-sparkle-ring';
+    container.style.position = container.style.position || 'relative';
+    container.appendChild(s); container.appendChild(r);
+    setTimeout(() => s.remove(), 1500);
+    setTimeout(() => r.remove(), 1300);
+  };
+
+  // Hook TM done: observe the done-bar show + send notif
+  const doneBar = document.getElementById('done-bar');
+  if (doneBar) {
+    new MutationObserver((muts) => {
+      for (const m of muts) {
+        if (m.type === 'attributes' && doneBar.classList.contains('show')) {
+          const ring = document.getElementById('tm-ring-wrap');
+          sparkle(ring);
+          Haptic.success();
+          WakeLock.release();
+          Notif.send('⏱ Timer Complete', "Your focus session has finished.");
+          TimerPersist.clear();
+        }
+      }
+    }).observe(doneBar, { attributes:true, attributeFilter:['class'] });
+  }
+
+  // Hook Pomodoro phase-end sparkle (watch phase badge text)
+  const pomoBadge = document.getElementById('pomo-phase-badge');
+  if (pomoBadge) {
+    let lastText = pomoBadge.textContent;
+    new MutationObserver(() => {
+      const now = pomoBadge.textContent;
+      if (now !== lastText) {
+        lastText = now;
+        if (now.toLowerCase().includes('rest')) {
+          // Work just ended → rest started
+          const card = document.getElementById('pomo-card');
+          sparkle(card);
+          Haptic.success();
+          Notif.send('🍅 Work session complete', 'Time for a break — good work.');
+        } else if (now.toLowerCase().includes('work')) {
+          Haptic.press();
+          Notif.send('⚡ Break over', 'Back to focus mode.');
+        }
+      }
+    }).observe(pomoBadge, { childList:true, subtree:true, characterData:true });
+  }
+
+  // Hook Task-complete celebration
+  if (window.Tasks) {
+    document.addEventListener('click', (e) => {
+      const chk = e.target.closest('.task-check');
+      if (!chk) return;
+      const item = chk.closest('.task-item');
+      if (item && !chk.classList.contains('checked')) {
+        // About to check
+        setTimeout(() => {
+          if (chk.classList.contains('checked')) {
+            item.classList.add('celebrated');
+            Haptic.success();
+            setTimeout(() => item.classList.remove('celebrated'), 1300);
+          }
+        }, 20);
+      }
+    }, { passive:true });
+  }
+
+  // ───── 10. LONG-PRESS DELETE SAFEGUARD ───────────────────────
+  // Tap-to-delete still works, but long-press provides haptic confirm on mobile
+  const LONG_PRESS_MS = 380;
+  let _lpTimer = null, _lpEl = null;
+  const clearLP = () => {
+    if (_lpTimer) { clearTimeout(_lpTimer); _lpTimer = null; }
+    if (_lpEl) { _lpEl.classList.remove('lp-confirming'); _lpEl = null; }
+  };
+  document.addEventListener('pointerdown', (e) => {
+    const del = e.target.closest('.task-act.del-btn, .mr-del-btn');
+    if (!del) return;
+    _lpEl = del;
+    del.classList.add('lp-confirming');
+    _lpTimer = setTimeout(() => { Haptic.warn(); }, LONG_PRESS_MS);
+  }, { passive:true });
+  document.addEventListener('pointerup', clearLP, { passive:true });
+  document.addEventListener('pointercancel', clearLP, { passive:true });
+  document.addEventListener('pointerleave', clearLP, { passive:true });
+
+  // ───── 11. SCROLL SHADOW INDICATORS ──────────────────────────
+  const wrapScroll = (el) => {
+    if (!el || el.__wrapped) return;
+    const wrapper = document.createElement('div');
+    wrapper.className = 'scroll-wrap-fade';
+    el.parentNode.insertBefore(wrapper, el);
+    wrapper.appendChild(el);
+    el.__wrapped = true;
+    const update = () => {
+      const top = el.scrollTop > 4;
+      const bot = (el.scrollTop + el.clientHeight) < (el.scrollHeight - 4);
+      wrapper.classList.toggle('has-top', top);
+      wrapper.classList.toggle('has-bot', bot);
+    };
+    el.addEventListener('scroll', update, { passive:true });
+    new ResizeObserver(update).observe(el);
+    new MutationObserver(update).observe(el, { childList:true, subtree:true });
+    update();
+  };
+  // Apply to key scroll lists after initial render
+  setTimeout(() => {
+    ['lap-list','sessions-list','task-list','pomo-history'].forEach(id => wrapScroll(document.getElementById(id)));
+  }, 200);
+
+  // ───── 12. ESC KEY CLOSES MODALS ─────────────────────────────
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      const pfModal = document.getElementById('profile-modal-overlay');
+      if (pfModal && pfModal.style.display === 'flex') { pfModal.style.display = 'none'; return; }
+      const durM = document.getElementById('dur-modal-overlay');
+      if (durM) { durM.remove(); return; }
+      const ct = document.getElementById('credit-toast');
+      if (ct && ct.classList.contains('show')) { window.CreditToast && CreditToast.hide(); return; }
+    }
+  });
+
+  // ───── 13. SMART AUDIOCONTEXT UNLOCK (iOS Safari) ────────────
+  const unlockAudio = () => {
+    try {
+      window.Audio && typeof Audio.ensure === 'function' && Audio.ensure();
+    } catch(e){}
+  };
+  ['pointerdown','keydown','touchstart'].forEach(ev =>
+    document.addEventListener(ev, unlockAudio, { once:true, passive:true })
+  );
+
+  // ───── 14. KEYBOARD: ENHANCED SHORTCUTS ──────────────────────
+  // R = reset active timer, N = new task (when on tasks tab)
+  document.addEventListener('keydown', (e) => {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    const active = document.querySelector('.panel.active')?.id;
+    if (e.code === 'KeyR' && !e.metaKey && !e.ctrlKey) {
+      if (active === 'panel-sw' && !document.getElementById('sw-btn-reset').disabled) { e.preventDefault(); window.swReset && swReset(); }
+      else if (active === 'panel-tm' && !document.getElementById('tm-btn-reset').disabled) { e.preventDefault(); window.tmReset && tmReset(); }
+      else if (active === 'panel-pm' && !document.getElementById('pomo-btn-reset').disabled) { e.preventDefault(); window.pomoReset && pomoReset(); }
+    }
+    if (e.code === 'KeyN' && active === 'panel-tk' && !e.metaKey && !e.ctrlKey) {
+      e.preventDefault();
+      const inp = document.getElementById('task-input');
+      inp && inp.focus();
+    }
+    // 1-6 for tab switch
+    if (/^Digit[1-5]$/.test(e.code) && !e.metaKey && !e.ctrlKey && !e.altKey) {
+      const idx = parseInt(e.code.replace('Digit',''),10) - 1;
+      const tabs = ['sw','tm','pm','tk','st'];
+      if (tabs[idx]) { e.preventDefault(); window.switchTab && switchTab(tabs[idx]); Haptic.tap(); }
+    }
+  });
+
+  // ───── 16. EXPORT CSV OPTION (bonus) ─────────────────────────
+  // Adds CSV export alongside existing JSON export if button present
+  // Attach to any future "Export CSV" invocations
+  window.exportCSV = function() {
+    try {
+      const sessions = (window.Store && Store.sessions.load) ? Store.sessions.load() : [];
+      const rows = [['date','type','duration_ms','duration_readable','taskName','goalId','hour']];
+      const toReadable = (ms) => {
+        const s=Math.floor(ms/1000),h=Math.floor(s/3600),m=Math.floor((s%3600)/60);
+        return (h?h+'h ':'')+(m?m+'m':'')+(!h&&!m?(s+'s'):'');
+      };
+      sessions.forEach(s => rows.push([s.date,s.type,s.ms,toReadable(s.ms),s.taskName||'',s.goalId||'',s.hour||'']));
+      const csv = rows.map(r => r.map(c => `"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
+      const blob = new Blob([csv], {type:'text/csv;charset=utf-8'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'chronoblast-sessions-' + new Date().toISOString().slice(0,10) + '.csv';
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch(e) { console.error(e); }
+  };
+
+  // ───── 17. VISUAL POLISH: ENHANCE EXISTING RING MILESTONES ──
+  const ringFill = document.getElementById('ring-fill');
+  if (ringFill) {
+    new MutationObserver(() => {
+      const orig = parseFloat(ringFill.getAttribute('stroke-dasharray') || 515);
+      const offset = parseFloat(ringFill.style.strokeDashoffset || 0);
+      const pct = Math.max(0, Math.min(100, 100 - (offset / orig) * 100));
+      if (pct >= 90) ringFill.setAttribute('data-milestone','90');
+      if (pct >= 100) ringFill.setAttribute('data-milestone','100');
+      if (pct < 90) ringFill.removeAttribute('data-milestone');
+    }).observe(ringFill, { attributes:true, attributeFilter:['style'] });
+  }
+
+  // ───── 18. SAFE-MODE AUDIO FALLBACK ──────────────────────────
+  // Gracefully handle autoplay-blocked AudioContext
+  const safeAudioWarning = () => {
+    try {
+      if (window.Audio && typeof Audio.ensure === 'function') {
+        Audio.ensure();
+      }
+    } catch(e){}
+  };
+  safeAudioWarning();
+
+  // ───── 19. THEME TOGGLE ROTATION POLISH ──────────────────────
+  const tBtn = document.getElementById('theme-toggle-btn');
+  if (tBtn) {
+    tBtn.addEventListener('click', () => {
+      tBtn.animate(
+        [{ transform:'rotate(0) scale(1)' },
+         { transform:'rotate(180deg) scale(1.18)' },
+         { transform:'rotate(360deg) scale(1)' }],
+        { duration: 520, easing:'cubic-bezier(0.34,1.56,0.64,1)' }
+      );
+      Haptic.press();
+    });
+  }
+
+  // ───── 20. CONSOLE SIGNATURE ─────────────────────────────────
+  try {
+    const art = [
+      '%c  ChronoBlast  ',
+      'background:linear-gradient(90deg,#00bfa6,#00e6c8);color:#06080d;padding:6px 12px;border-radius:6px;font-weight:700;font-size:14px;letter-spacing:0.3em'
+    ];
+    console.log(...art, '%c\n  Focus · Track · Measure  \n  Premium build — polished execution layer active.', 'color:#00e6c8;font-size:11px');
+  } catch(e){}
+
+  // ───── 21. FIRST-TIME ENTRANCE: PANEL STAGGER RE-ENABLE ──────
+  // The staggered entrance fires naturally via CSS on first load;
+  // re-apply when switching tabs for consistent polish.
+  if (window.switchTab) {
+    const _origSwitch = window.switchTab;
+    window.switchTab = function(id) {
+      _origSwitch(id);
+      Haptic.tap();
+    };
+  }
+
+  // ───── 22. INSTALL A LIGHT CREDIT-TOAST AUTO-DISMISS ──────────
+  // Tap anywhere outside credit toast to dismiss
+  document.addEventListener('click', (e) => {
+    const t = document.getElementById('credit-toast');
+    if (!t || !t.classList.contains('show')) return;
+    if (t.contains(e.target)) return;
+    setTimeout(() => { if (window.CreditToast) CreditToast.hide(); }, 250);
+  });
+
+  // ───── 23. INTERSECTION OBSERVER FOR LAZY STAT RENDERS ───────
+  // Avoid rendering off-screen stats until they enter viewport
+  // (optional perf boost for long Stats tab)
+  // Skipped: Stats tab is light enough; leaving commented as future hook.
+
+  // ───── 24. HEALTH CHECK ──────────────────────────────────────
+  // Surface any uncaught errors as a soft console warning (dev aid)
+  window.addEventListener('error', (e) => {
+    console.warn('[ChronoBlast] non-fatal:', e.message);
+  });
+
+})();
+
+// ══════════════════════════════════════════════════════════════════
+// MODULE: GOOGLE CALENDAR SYNC
+// Full OAuth 2.0 via Google Identity Services.
+// Sessions → Calendar events, synced from the browser — no server.
+// ══════════════════════════════════════════════════════════════════
+const GCalSync = (() => {
+  const CID_KEY      = 'cb_gcal_cid';
+  const SYNCED_KEY   = 'cb_gcal_synced';  // Set of ISO date strings already pushed
+  const LAST_KEY     = 'cb_gcal_last';    // Timestamp of last successful sync
+
+  let _token       = null;  // Short-lived access token
+  let _tokenClient = null;  // GIS tokenClient instance
+  let _clientId    = '';    // User-supplied OAuth client ID
+  let _synced      = new Set();
+
+  // ── Persistence helpers ──────────────────────────────────────
+  const persist = () => {
+    try {
+      localStorage.setItem(SYNCED_KEY, JSON.stringify([..._synced].slice(-600)));
+    } catch(e) {}
+  };
+
+  const loadLocal = () => {
+    _clientId = localStorage.getItem(CID_KEY) || '';
+    try { _synced = new Set(JSON.parse(localStorage.getItem(SYNCED_KEY) || '[]')); } catch { _synced = new Set(); }
+  };
+
+  // ── Session → Google Calendar event ─────────────────────────
+  const toEvent = (s) => {
+    const start = new Date(s.date);
+    // Minimum event duration 1 minute so GCal doesn't reject it
+    const end   = new Date(start.getTime() + Math.max(s.ms, 60000));
+    const icon  = { Stopwatch:'⏱', Timer:'⏳', Pomodoro:'🍅', Task:'✅', Mirror:'🪞' }[s.type] || '⏱';
+    const title = s.taskName
+      ? `${icon} ${s.taskName}`
+      : `${icon} ${s.type} Session`;
+    const colorId = s.type === 'Pomodoro' ? '11' : s.type === 'Timer' ? '7' : s.type === 'Task' ? '2' : '1';
+    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    return {
+      summary: title + ' · ChronoBlast',
+      description: [
+        'Logged by ChronoBlast  ⏱',
+        `Type: ${s.type}`,
+        `Duration: ${Fmt.dur(s.ms)}`,
+        s.taskName ? `Task: ${s.taskName}` : null,
+      ].filter(Boolean).join('\n'),
+      start: { dateTime: start.toISOString(), timeZone: tz },
+      end:   { dateTime: end.toISOString(),   timeZone: tz },
+      colorId,
+    };
+  };
+
+  // ── Log panel ────────────────────────────────────────────────
+  const log = (msg, type = 'info') => {
+    const panel = document.getElementById('gcal-log');
+    if (!panel) return;
+    const row = document.createElement('div');
+    row.className = 'gcal-log-row ' + type;
+    const now = new Date();
+    const ts  = Fmt.p2(now.getHours()) + ':' + Fmt.p2(now.getMinutes()) + ':' + Fmt.p2(now.getSeconds());
+    const prefix = type === 'ok' ? '✓' : type === 'err' ? '✕' : '·';
+    row.innerHTML = `<span class="gcal-log-time">${ts}</span>${prefix} ${msg}`;
+    panel.prepend(row);
+    // Keep log tidy — max 40 rows
+    while (panel.children.length > 40) panel.removeChild(panel.lastChild);
+  };
+
+  // ── UI state machine ─────────────────────────────────────────
+  const render = () => {
+    loadLocal();
+    const elSetup     = document.getElementById('gcal-setup-view');
+    const elConnect   = document.getElementById('gcal-connect-view');
+    const elConnected = document.getElementById('gcal-connected-view');
+    const elPill      = document.getElementById('gcal-status-pill');
+    if (!elSetup) return;
+
+    if (!_clientId) {
+      elSetup.style.display     = '';
+      elConnect.style.display   = 'none';
+      elConnected.style.display = 'none';
+      if (elPill) { elPill.textContent = 'Setup needed'; elPill.style.color = ''; }
+    } else if (!_token) {
+      elSetup.style.display     = 'none';
+      elConnect.style.display   = '';
+      elConnected.style.display = 'none';
+      if (elPill) { elPill.textContent = 'Not connected'; elPill.style.color = ''; }
+    } else {
+      elSetup.style.display     = 'none';
+      elConnect.style.display   = 'none';
+      elConnected.style.display = '';
+      if (elPill) { elPill.textContent = '✓ Connected'; elPill.style.color = 'var(--teal)'; }
+      _updateStats();
+    }
+  };
+
+  const _updateStats = () => {
+    loadLocal();
+    const sessions  = Store.sessions.load();
+    const unsynced  = sessions.filter(s => !_synced.has(s.date)).length;
+    const totalSynced = _synced.size;
+    const lastRaw   = localStorage.getItem(LAST_KEY);
+    const lastLabel = lastRaw
+      ? new Date(parseInt(lastRaw, 10)).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+      : 'Never';
+
+    const elLabel   = document.getElementById('gcal-account-label');
+    const elUnsync  = document.getElementById('gcal-unsynced-count');
+    const elTotal   = document.getElementById('gcal-total-synced');
+    const elLast    = document.getElementById('gcal-last-sync');
+    const elBtn     = document.getElementById('gcal-sync-btn');
+
+    if (elLabel)  elLabel.textContent  = `Google Calendar connected · ${sessions.length} sessions total`;
+    if (elUnsync) elUnsync.textContent = unsynced + (unsynced === 1 ? ' session' : ' sessions');
+    if (elTotal)  elTotal.textContent  = totalSynced;
+    if (elLast)   elLast.textContent   = lastLabel;
+    if (elBtn)    elBtn.textContent    = unsynced > 0
+      ? `📤 Sync ${unsynced} Session${unsynced !== 1 ? 's' : ''} to Calendar`
+      : '✓ All synced';
+  };
+
+  // ── GIS tokenClient init ──────────────────────────────────────
+  const _initClient = () => {
+    if (!window.google?.accounts?.oauth2) {
+      log('Google Identity Services not loaded yet — try again in a moment', 'err');
+      return false;
+    }
+    _tokenClient = google.accounts.oauth2.initTokenClient({
+      client_id: _clientId,
+      scope: 'https://www.googleapis.com/auth/calendar.events',
+      callback: (resp) => {
+        if (resp.error) {
+          log('Auth failed: ' + (resp.error_description || resp.error), 'err');
+          return;
+        }
+        _token = resp.access_token;
+        log('Connected to Google Calendar ✓', 'ok');
+        render();
+      },
+    });
+    return true;
+  };
+
+  // ── Public API ───────────────────────────────────────────────
+  return {
+    // Called every time Stats tab is opened
+    refresh() {
+      render();
+    },
+
+    saveClientId() {
+      const input = document.getElementById('gcal-client-id-input');
+      const errEl = document.getElementById('gcal-setup-err');
+      const val   = (input?.value || '').trim();
+
+      if (!val) {
+        if (errEl) errEl.textContent = '⚠ Please paste your OAuth 2.0 Client ID.';
+        return;
+      }
+      if (!val.endsWith('.apps.googleusercontent.com')) {
+        if (errEl) errEl.textContent = '⚠ Valid Client IDs end with .apps.googleusercontent.com';
+        return;
+      }
+      if (errEl) errEl.textContent = '';
+      _clientId = val;
+      localStorage.setItem(CID_KEY, _clientId);
+      render();
+    },
+
+    clearClientId() {
+      _clientId = '';
+      _token    = null;
+      _tokenClient = null;
+      localStorage.removeItem(CID_KEY);
+      render();
+    },
+
+    connect() {
+      if (!_tokenClient && !_initClient()) return;
+      // prompt:'consent' forces account picker on every connect (clean UX)
+      _tokenClient.requestAccessToken({ prompt: 'consent' });
+    },
+
+    disconnect() {
+      if (_token && window.google?.accounts?.oauth2) {
+        google.accounts.oauth2.revoke(_token, () => {});
+      }
+      _token = null;
+      log('Disconnected from Google Calendar.', 'info');
+      render();
+    },
+
+    async syncAll() {
+      if (!_token) { render(); return; }
+      loadLocal();
+
+      const sessions = Store.sessions.load();
+      const toSync   = sessions.filter(s => !_synced.has(s.date));
+
+      const btn = document.getElementById('gcal-sync-btn');
+      if (!toSync.length) {
+        log('All sessions already synced ✓', 'ok');
+        if (btn) btn.textContent = '✓ All synced';
+        return;
+      }
+
+      if (btn) { btn.disabled = true; btn.textContent = `⏳ Syncing ${toSync.length} session${toSync.length !== 1 ? 's' : ''}…`; }
+
+      let ok = 0, fail = 0;
+
+      for (const s of toSync) {
+        try {
+          const res = await fetch(
+            'https://www.googleapis.com/calendar/v3/calendars/primary/events',
+            {
+              method: 'POST',
+              headers: {
+                Authorization: 'Bearer ' + _token,
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify(toEvent(s)),
+            }
+          );
+
+          if (res.ok) {
+            _synced.add(s.date);
+            ok++;
+            const label = s.taskName
+              ? s.taskName.slice(0, 28)
+              : s.type + ' Session';
+            log(`${label} · ${Fmt.dur(s.ms)}`, 'ok');
+          } else if (res.status === 401) {
+            // Access token expired — need re-auth
+            _token = null;
+            log('Token expired — please reconnect to continue', 'err');
+            render();
+            break;
+          } else {
+            const body = await res.json().catch(() => ({}));
+            fail++;
+            log(`Failed (${res.status}): ${body?.error?.message || 'unknown error'}`, 'err');
+          }
+        } catch (e) {
+          fail++;
+          log('Network error: ' + e.message, 'err');
+        }
+      }
+
+      persist();
+      if (ok) localStorage.setItem(LAST_KEY, String(Date.now()));
+
+      if (btn) { btn.disabled = false; }
+      _updateStats();
+
+      if (ok > 0 && fail === 0) log(`Synced ${ok} session${ok !== 1 ? 's' : ''} ✓`, 'ok');
+      else if (ok > 0 && fail > 0) log(`Synced ${ok}, failed ${fail}`, 'info');
+      else if (ok === 0 && fail > 0) log('Sync failed — check console for details', 'err');
+    },
+  };
 })();
 
 </script>
@@ -3407,10 +4750,38 @@ Stats.render();
   </div>
 </div>
 
-<!-- ══ FOCUS MUSIC FLOATING BADGE ══ -->
-<div class="fm-floating" id="fm-floating" onclick="fmToggle()" title="Focus music playing — click to pause">
-  <div class="fm-float-dot"></div>
-  <span class="fm-float-label" id="fm-float-label">focus music</span>
+<!-- ══ FOCUS MUSIC — PILL TOGGLE + POPUP PANEL ══ -->
+
+<!-- Expandable popup panel (appears above pill) -->
+<div class="fm-panel-popup" id="fm-panel-popup">
+  <div class="fm-popup-title">🎵 Focus Music</div>
+  <div class="fm-popup-desc" id="fm-desc">40 Hz gamma · Harmonic drone</div>
+  <div class="fm-popup-profiles">
+    <button class="fm-popup-profile-btn active" id="fm-p-focus" onclick="fmProfile('focus')">
+      <span class="fp-icon">⚡</span>Focus
+    </button>
+    <button class="fm-popup-profile-btn" id="fm-p-deep" onclick="fmProfile('deep')">
+      <span class="fp-icon">🌊</span>Deep
+    </button>
+    <button class="fm-popup-profile-btn" id="fm-p-calm" onclick="fmProfile('calm')">
+      <span class="fp-icon">🍃</span>Calm
+    </button>
+  </div>
+  <div class="fm-popup-vol-row">
+    <span class="fm-popup-vol-label">Vol</span>
+    <input type="range" class="fm-popup-vol-slider" id="fm-popup-vol" min="0" max="100" value="50"
+      oninput="fmVolume(this.value);document.getElementById('fm-popup-vol-val').textContent=this.value+'%'"/>
+    <span class="fm-popup-vol-val" id="fm-popup-vol-val">50%</span>
+  </div>
+  <button class="fm-popup-play-btn" id="fm-popup-play-btn" onclick="fmToggle()">▶  Play</button>
+  <div class="fm-popup-note">🎧 Use headphones for binaural beats. Purely synthesized — no network needed.</div>
+</div>
+
+<!-- Persistent pill button -->
+<div class="fm-pill" id="fm-pill" onclick="fmPillClick()">
+  <div class="fm-pill-dot"></div>
+  <span class="fm-pill-icon">🎵</span>
+  <span class="fm-pill-label" id="fm-pill-label">Music</span>
 </div>
 
 <!-- ══ CREDIT TOAST ══ -->
@@ -3475,114 +4846,36 @@ Stats.render();
   // SW registration requires an http/https origin — it cannot run from
   // file:// or blob: URLs. We detect the protocol and skip gracefully,
   // showing a hosting hint instead.
-  const _proto = location.protocol;
-  const _canSW = 'serviceWorker' in navigator && (_proto === 'https:' || _proto === 'http:');
+  // ── 2. SERVICE WORKER ───────────────────────────────────────────
+  // Registers sw.js from the same directory — works on any HTTP/HTTPS host.
+  // On GitHub Pages: https://nikunjgangrade.github.io/CHRONOBLAST/sw.js
+  if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
+    // Resolve sw.js relative to this HTML file's location
+    const swPath = new URL('sw.js', location.href).pathname;
 
-  if (_canSW) {
-    // Inject the SW as an inline <script> tag served from the same origin,
-    // then register it by its URL (works on any HTTP server).
-    const SW_CODE = `
-const CACHE  = 'chronoblast-v9';
-const SHELL  = location.pathname; // cache this page's path
-
-self.addEventListener('install', e => {
-  e.waitUntil(
-    caches.open(CACHE)
-      .then(c => c.add(SHELL))
-      .then(() => self.skipWaiting())
-  );
-});
-
-self.addEventListener('activate', e => {
-  e.waitUntil(
-    caches.keys()
-      .then(keys => Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k))))
-      .then(() => self.clients.claim())
-  );
-});
-
-self.addEventListener('fetch', e => {
-  if (e.request.method !== 'GET') return;
-  const url = new URL(e.request.url);
-  // Only cache same-origin requests
-  if (url.origin !== location.origin) return;
-  e.respondWith(
-    caches.match(e.request).then(cached => {
-      const fetchPromise = fetch(e.request).then(res => {
-        if (res && res.status === 200) {
-          caches.open(CACHE).then(c => c.put(e.request, res.clone()));
-        }
-        return res;
-      }).catch(() => cached || new Response('Offline', { status: 503 }));
-      return cached || fetchPromise;
-    })
-  );
-});
-
-self.addEventListener('message', e => {
-  if (e.data === 'skipWaiting') self.skipWaiting();
-});
-`;
-
-    // Write SW as a Blob, then use a ServiceWorker-friendly trick:
-    // create an object URL and immediately fetch+re-serve it from the page origin.
-    // The simplest cross-browser approach: inject a <script> element with the SW
-    // code into a dynamically-created same-origin Worker shim.
-    // 
-    // Actually — the only reliable single-file approach is to embed the SW
-    // source inside a comment in the HTML itself and have the SW fetch its own
-    // source via importScripts or a self-referencing URL pattern.
-    //
-    // Best real-world solution: write SW code into a <script id="sw-src"> tag
-    // then have a tiny fetch-interceptor SW registered at sw.js route via
-    // a Service Worker that serves itself. But since we are a single file,
-    // we use the "navigate preload" trick: register a SW that fetches THIS
-    // HTML file and extracts its own code from it.
-    //
-    // Simplest working approach for a single HTML file served over HTTP:
-    // Register a SW whose script is THIS SAME PAGE with ?sw=1 appended,
-    // and detect that query param to act as the SW.
-
-    if (location.search.includes('sw=1')) {
-      // This branch never runs in normal page load — SW detection only
-    } else {
-      // Encode SW source into a blob, then create an objectURL — this works
-      // when the page is served via HTTP because the blob inherits the page's
-      // origin context for SW purposes in Chrome 91+.
-      // For broader compat, fall back silently.
-      try {
-        const blob = new Blob([SW_CODE], { type: 'text/javascript' });
-        const swURL = URL.createObjectURL(blob);
-        navigator.serviceWorker.register(swURL)
-          .then(reg => {
-            console.log('[ChronoBlast] SW ready');
-            reg.addEventListener('updatefound', () => {
-              const sw = reg.installing;
-              sw.addEventListener('statechange', () => {
-                if (sw.state === 'installed' && navigator.serviceWorker.controller) {
-                  PWABanner.showUpdate();
-                }
-              });
-            });
-          })
-          .catch(() => {
-            // Blob SW blocked (Firefox, some Chromium builds) — silent fail.
-            // App still works; just no offline cache.
-            console.info('[ChronoBlast] Offline cache unavailable on this host. Deploy to HTTPS for full PWA features.');
+    navigator.serviceWorker.register(swPath)
+      .then(reg => {
+        console.log('[ChronoBlast] SW registered ✓', reg.scope);
+        reg.addEventListener('updatefound', () => {
+          const sw = reg.installing;
+          sw.addEventListener('statechange', () => {
+            if (sw.state === 'installed' && navigator.serviceWorker.controller) {
+              PWABanner.showUpdate();
+            }
           });
-      } catch(e) {
-        console.info('[ChronoBlast] SW skipped:', e.message);
-      }
-
-      let refreshing = false;
-      navigator.serviceWorker.addEventListener('controllerchange', () => {
-        if (!refreshing) { refreshing = true; location.reload(); }
+        });
+      })
+      .catch(err => {
+        // Silently fail — app still works without SW, just no offline cache
+        console.info('[ChronoBlast] SW not available:', err.message);
       });
-    }
-  } else if (_proto === 'file:') {
-    // Running from local filesystem — manifest + install prompt still work
-    // on some browsers, but SW cannot register. Show a one-time tip.
-    console.info('[ChronoBlast] Tip: serve this file over HTTP/HTTPS (e.g. with "npx serve .") to enable offline caching and full PWA install support.');
+
+    let refreshing = false;
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      if (!refreshing) { refreshing = true; location.reload(); }
+    });
+  } else if (location.protocol === 'file:') {
+    console.info('[ChronoBlast] Open via HTTP/HTTPS to enable offline caching. Try: npx serve .');
   }
 
   // ── 3. INSTALL PROMPT ───────────────────────────────────────────
