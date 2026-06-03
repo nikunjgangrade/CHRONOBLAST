@@ -1164,6 +1164,23 @@ body{
 .launch-cancel{width:100%;padding:11px;background:transparent;border:1px solid var(--border);border-radius:10px;color:var(--muted);font-family:'DM Sans',sans-serif;font-size:0.68rem;letter-spacing:0.14em;text-transform:uppercase;cursor:pointer;transition:all 0.18s;}
 .launch-cancel:hover{border-color:rgba(255,95,109,0.3);color:var(--red);}
 
+/* ══ EXPORT MODAL (matches dur-modal / launch-modal aesthetic) ══ */
+.export-modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.72);z-index:1000;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px);animation:fadeIn 0.18s ease;}
+.export-modal{background:var(--g2);border:1px solid var(--border2);border-radius:20px;padding:26px 22px;width:min(360px,92vw);box-shadow:0 8px 60px rgba(0,0,0,0.5),0 0 40px var(--teal-glow);animation:modalPop 0.32s cubic-bezier(0.34,1.56,0.64,1);}
+.export-modal-title{font-family:'Space Mono',monospace;font-size:0.8rem;font-weight:700;color:var(--teal);margin-bottom:4px;letter-spacing:0.06em;}
+.export-modal-sub{font-size:0.58rem;letter-spacing:0.28em;text-transform:uppercase;color:var(--muted);margin-bottom:18px;}
+.export-range-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:9px;margin-bottom:16px;}
+.export-range-btn{padding:14px 6px;background:var(--surface2);border:1px solid var(--border);border-radius:13px;cursor:pointer;text-align:center;transition:all 0.2s;color:var(--muted);}
+.export-range-btn:hover{border-color:var(--border2);background:var(--teal-dim);color:var(--teal);transform:translateY(-1px);}
+.export-range-icon{font-size:1.35rem;margin-bottom:5px;line-height:1;}
+.export-range-label{font-size:0.62rem;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;font-family:'DM Sans',sans-serif;color:var(--text);}
+.export-range-sub{font-size:0.48rem;color:var(--muted);margin-top:3px;letter-spacing:0.08em;}
+.export-cancel{width:100%;padding:11px;background:transparent;border:1px solid var(--border);border-radius:10px;color:var(--muted);font-family:'DM Sans',sans-serif;font-size:0.68rem;letter-spacing:0.14em;text-transform:uppercase;cursor:pointer;transition:all 0.18s;}
+.export-cancel:hover{border-color:rgba(255,95,109,0.3);color:var(--red);}
+.export-range-btn:active{transform:translateY(0) scale(0.97);}
+[data-theme="light"] .export-modal{background:rgba(255,255,255,0.96);}
+[data-theme="light"] .export-modal-overlay{background:rgba(0,0,0,0.42);}
+
 /* ══ CREDIT CONFIRMATION TOAST ══ */
 .credit-toast{position:fixed;bottom:30px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--g2);border:1px solid var(--border2);border-radius:16px;padding:16px 20px;z-index:2000;box-shadow:0 8px 40px rgba(0,0,0,0.5),0 0 30px var(--teal-glow);opacity:0;transition:all 0.3s cubic-bezier(0.34,1.56,0.64,1);pointer-events:none;min-width:260px;max-width:340px;}
 .credit-toast.show{opacity:1;transform:translateX(-50%) translateY(0);pointer-events:all;}
@@ -2050,7 +2067,7 @@ body{
       <div class="sessions-scroll" id="sessions-list"><div class="empty-state">No sessions yet</div></div>
     </div>
     <div style="display:flex;gap:10px;margin-top:4px">
-      <button class="clear-btn" onclick="exportData()" style="border-color:var(--border2);color:var(--teal)">⬇ Export Data</button>
+      <button class="clear-btn" onclick="exportData()" style="border-color:var(--border2);color:var(--teal)">⬇ Export Stats</button>
       <button class="clear-btn" onclick="clearStats()">Clear all data</button>
     </div>
 
@@ -3825,21 +3842,245 @@ const Stats = (() => {
 })();
 function switchReport(p){ Stats.switchReport(p); }
 function clearStats(){ Stats.clearData(); }
+// ── EXPORT: range-aware detailed statistics export ─────────────────
+// Opens a modal asking the user which period to export (Week / Month / Lifetime),
+// then builds a rich JSON statistics report and triggers a download.
 function exportData() {
-  const payload = {
+  // If a modal is already open, just bail (prevents accidental double-open)
+  if (document.getElementById('export-modal-overlay')) return;
+  const html = `
+    <div class="export-modal-overlay" id="export-modal-overlay" onclick="closeExportModal(event)">
+      <div class="export-modal" onclick="event.stopPropagation()">
+        <div class="export-modal-title">⬇ Export Statistics</div>
+        <div class="export-modal-sub">Pick a range</div>
+        <div class="export-range-grid">
+          <div class="export-range-btn" onclick="runExport('week')">
+            <div class="export-range-icon">📅</div>
+            <div class="export-range-label">Week</div>
+            <div class="export-range-sub">Last 7 days</div>
+          </div>
+          <div class="export-range-btn" onclick="runExport('month')">
+            <div class="export-range-icon">🗓️</div>
+            <div class="export-range-label">Month</div>
+            <div class="export-range-sub">Last 30 days</div>
+          </div>
+          <div class="export-range-btn" onclick="runExport('life')">
+            <div class="export-range-icon">∞</div>
+            <div class="export-range-label">Lifetime</div>
+            <div class="export-range-sub">All-time</div>
+          </div>
+        </div>
+        <button class="export-cancel" onclick="closeExportModal()">Cancel</button>
+      </div>
+    </div>`;
+  document.body.insertAdjacentHTML('beforeend', html);
+  document.addEventListener('keydown', _exportEscHandler);
+}
+
+function closeExportModal(e) {
+  if (e && e.target && e.target.id !== 'export-modal-overlay') return;
+  const m = document.getElementById('export-modal-overlay');
+  if (m) m.remove();
+  document.removeEventListener('keydown', _exportEscHandler);
+}
+function _exportEscHandler(ev){
+  if (ev.key === 'Escape') closeExportModal();
+}
+
+function runExport(range) {
+  try {
+    const payload = buildExportPayload(range);
+    const stamp = new Date().toISOString().slice(0,10);
+    const fname = `chronoblast-${range}-stats-${stamp}.json`;
+    const blob = new Blob([JSON.stringify(payload, null, 2)], {type:'application/json'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = fname;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1500);
+    closeExportModal();
+  } catch (err) {
+    console.error('Export failed', err);
+    alert('Export failed: ' + (err && err.message ? err.message : 'unknown error'));
+  }
+}
+
+// Builds the detailed statistics payload for the selected range.
+function buildExportPayload(range) {
+  const all = Store.sessions.load() || [];
+  const now = new Date();
+  let start, end = new Date(now), label;
+
+  if (range === 'week') {
+    start = new Date(now); start.setDate(start.getDate() - 6); start.setHours(0,0,0,0);
+    label = 'Last 7 days';
+  } else if (range === 'month') {
+    start = new Date(now); start.setDate(start.getDate() - 29); start.setHours(0,0,0,0);
+    label = 'Last 30 days';
+  } else {
+    start = null; label = 'Lifetime';
+  }
+
+  const inRange = start
+    ? all.filter(s => { const t = new Date(s.date); return t >= start && t <= end; })
+    : all.slice();
+
+  // ── Aggregates ──
+  const totalMs   = inRange.reduce((a,s)=>a + (s.ms||0), 0);
+  const count     = inRange.length;
+  const avgMs     = count ? Math.round(totalMs / count) : 0;
+  const longestMs = count ? Math.max(...inRange.map(s=>s.ms||0)) : 0;
+  const shortestMs= count ? Math.min(...inRange.map(s=>s.ms||0)) : 0;
+
+  // Per-day breakdown
+  const byDay = {};
+  inRange.forEach(s => {
+    const k = (s.date||'').slice(0,10);
+    if (!k) return;
+    if (!byDay[k]) byDay[k] = { date:k, ms:0, sessions:0 };
+    byDay[k].ms += s.ms||0;
+    byDay[k].sessions += 1;
+  });
+  const dailyBreakdown = Object.values(byDay).sort((a,b)=>a.date.localeCompare(b.date))
+    .map(d => ({ date: d.date, focusMs: d.ms, focusReadable: humanDur(d.ms), sessions: d.sessions }));
+  const activeDays = dailyBreakdown.length;
+
+  // Per-type breakdown (Stopwatch, Timer, Pomodoro, Mirror Goal, etc.)
+  const byType = {};
+  inRange.forEach(s => {
+    const t = s.type || 'Unknown';
+    if (!byType[t]) byType[t] = { type:t, ms:0, sessions:0 };
+    byType[t].ms += s.ms||0;
+    byType[t].sessions += 1;
+  });
+  const typeBreakdown = Object.values(byType).sort((a,b)=>b.ms-a.ms)
+    .map(t => ({ type:t.type, focusMs:t.ms, focusReadable: humanDur(t.ms), sessions:t.sessions,
+                 share: totalMs ? +(t.ms/totalMs*100).toFixed(1) : 0 }));
+
+  // Per-task breakdown
+  const byTask = {};
+  inRange.filter(s => s.taskName).forEach(s => {
+    const n = s.taskName;
+    if (!byTask[n]) byTask[n] = { name:n, ms:0, sessions:0 };
+    byTask[n].ms += s.ms||0;
+    byTask[n].sessions += 1;
+  });
+  const taskBreakdown = Object.values(byTask).sort((a,b)=>b.ms-a.ms)
+    .map(t => ({ task:t.name, focusMs:t.ms, focusReadable: humanDur(t.ms), sessions:t.sessions,
+                 share: totalMs ? +(t.ms/totalMs*100).toFixed(1) : 0 }));
+
+  // Hour-of-day heatmap (24 buckets)
+  const hourMap = Array(24).fill(0);
+  inRange.forEach(s => {
+    const h = (typeof s.hour === 'number') ? s.hour : new Date(s.date).getHours();
+    if (h >= 0 && h < 24) hourMap[h] += s.ms||0;
+  });
+  const hourly = hourMap.map((ms,h) => ({ hour:h, focusMs:ms, focusReadable: humanDur(ms) }));
+  const peakHourEntry = hourly.slice().sort((a,b)=>b.focusMs-a.focusMs)[0];
+  const peakHour = peakHourEntry && peakHourEntry.focusMs > 0
+    ? String(peakHourEntry.hour).padStart(2,'0') + ':00'
+    : null;
+
+  // Weekday distribution (Sun-Sat)
+  const dayNames = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const weekdayMs = Array(7).fill(0);
+  const weekdayCt = Array(7).fill(0);
+  inRange.forEach(s => {
+    const d = new Date(s.date).getDay();
+    weekdayMs[d] += s.ms||0;
+    weekdayCt[d] += 1;
+  });
+  const weekdayBreakdown = dayNames.map((n,i) => ({
+    weekday:n, focusMs:weekdayMs[i], focusReadable:humanDur(weekdayMs[i]), sessions:weekdayCt[i]
+  }));
+
+  // Streak (all-time, regardless of selected range — meaningful metric)
+  const streakDays = computeStreak(all);
+
+  // Focus score (today, snapshot)
+  const focusScoreToday = computeFocusScore(all);
+
+  // Goal progress baseline (same goals used in UI)
+  const goalMs = range==='week' ? 20*3600000 : range==='month' ? 80*3600000 : 500*3600000;
+  const goalProgressPct = goalMs ? Math.min(100, +(totalMs/goalMs*100).toFixed(1)) : 0;
+
+  // Sleek, well-organised payload
+  return {
+    app: 'ChronoBlast',
+    schemaVersion: 2,
     exportedAt: new Date().toISOString(),
-    sessions: Store.sessions.load(),
-    tasks: Store.tasks.load(),
-    mirror: Store.mirror.load(),
-    profile: Store.profile.load()
+    range: {
+      key: range,
+      label: label,
+      from: start ? start.toISOString() : null,
+      to: end.toISOString()
+    },
+    summary: {
+      totalFocusMs:   totalMs,
+      totalFocusReadable: humanDur(totalMs),
+      sessions: count,
+      activeDays: activeDays,
+      avgSessionMs:  avgMs,
+      avgSessionReadable: humanDur(avgMs),
+      longestSessionMs:  longestMs,
+      longestSessionReadable: humanDur(longestMs),
+      shortestSessionMs: shortestMs,
+      shortestSessionReadable: humanDur(shortestMs),
+      peakHour: peakHour,
+      streakDays: streakDays,
+      focusScoreToday: focusScoreToday,
+      goalMs: goalMs,
+      goalReadable: humanDur(goalMs),
+      goalProgressPct: goalProgressPct
+    },
+    dailyBreakdown,
+    weekdayBreakdown,
+    hourly,
+    typeBreakdown,
+    taskBreakdown,
+    sessions: inRange.map(s => ({
+      date: s.date,
+      type: s.type,
+      taskName: s.taskName || null,
+      goalId: s.goalId || null,
+      ms: s.ms,
+      readable: humanDur(s.ms),
+      hour: (typeof s.hour === 'number') ? s.hour : new Date(s.date).getHours()
+    })),
+    profile: Store.profile.load() || null
   };
-  const blob = new Blob([JSON.stringify(payload, null, 2)], {type:'application/json'});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = 'chronoblast-backup-' + new Date().toISOString().slice(0,10) + '.json';
-  a.click();
-  URL.revokeObjectURL(url);
+
+  // ── helpers (closure-local) ──
+  function humanDur(ms) {
+    ms = Math.max(0, Math.round(ms||0));
+    const s = Math.floor(ms/1000), h = Math.floor(s/3600),
+          m = Math.floor((s%3600)/60), sec = s%60;
+    if (h > 0) return `${h}h ${m}m`;
+    if (m > 0) return `${m}m ${sec}s`;
+    return `${sec}s`;
+  }
+  function computeStreak(sessions) {
+    if (!sessions || !sessions.length) return 0;
+    const days = new Set(sessions.map(x => (x.date||'').slice(0,10)));
+    let streak = 0; const d = new Date();
+    while (true) {
+      const k = d.toISOString().slice(0,10);
+      if (days.has(k)) { streak++; d.setDate(d.getDate()-1); } else break;
+    }
+    return streak;
+  }
+  function computeFocusScore(sessions) {
+    if (!sessions || !sessions.length) return 0;
+    const todayKey = new Date().toISOString().slice(0,10);
+    const today = sessions.filter(x => (x.date||'').slice(0,10) === todayKey);
+    const todayMs = today.reduce((a,s)=>a+(s.ms||0),0);
+    const streak = computeStreak(sessions);
+    return Math.min(100, Math.round(
+      Math.min(today.length*8, 40) +
+      Math.min(todayMs/3600000*10, 40) +
+      Math.min(streak*4, 20)
+    ));
+  }
 }
 
 
@@ -4784,6 +5025,8 @@ const GCalSync = (() => {
   <span class="fm-pill-label" id="fm-pill-label">Music</span>
 </div>
 
+<!-- ══ EXPORT MODAL is injected dynamically by exportData() ══ -->
+
 <!-- ══ CREDIT TOAST ══ -->
 <div class="credit-toast" id="credit-toast">
   <div class="credit-toast-title" id="ct-title">✦ Session credited</div>
@@ -4964,6 +5207,592 @@ const GCalSync = (() => {
 .pwa-standalone body{padding-bottom:max(80px, calc(80px + env(safe-area-inset-bottom)));}
 </style>
 
+<!-- ══ NOTEPAD STYLES ══ -->
+<style>
+/* ── Notepad — desktop sidebar (≥1100px) ── */
+.notepad-sidebar {
+  position: fixed;
+  top: 40px;
+  right: max(20px, calc((100vw - 460px) / 2 - 300px - 20px));
+  width: 280px;
+  max-height: calc(100vh - 80px);
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  box-shadow:
+    0 1px 2px rgba(0,0,0,0.22),
+    0 4px 24px rgba(0,0,0,0.28),
+    0 16px 48px rgba(0,0,0,0.18),
+    inset 0 1px 0 rgba(255,255,255,0.045);
+  overflow: hidden;
+  transition: box-shadow 0.3s ease, border-color 0.35s ease, background 0.35s ease;
+  z-index: 50;
+  opacity: 0;
+  transform: translateX(12px);
+  pointer-events: none;
+}
+/* Show when viewport is wide enough */
+@media (min-width: 1100px) {
+  .notepad-sidebar {
+    opacity: 1;
+    transform: translateX(0);
+    pointer-events: all;
+    transition: opacity 0.45s cubic-bezier(0.22,1,0.36,1),
+                transform 0.45s cubic-bezier(0.22,1,0.36,1),
+                box-shadow 0.3s ease,
+                border-color 0.35s ease,
+                background 0.35s ease;
+  }
+}
+[data-theme="light"] .notepad-sidebar {
+  box-shadow:
+    0 1px 2px rgba(0,40,80,0.06),
+    0 4px 20px rgba(0,40,80,0.09),
+    0 16px 48px rgba(0,40,80,0.07),
+    inset 0 1px 0 rgba(255,255,255,0.95);
+}
+/* Notepad header bar */
+.notepad-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px 10px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+  gap: 8px;
+  background: var(--surface2);
+  transition: background 0.35s ease, border-color 0.35s ease;
+}
+[data-theme="light"] .notepad-header {
+  background: rgba(255,255,255,0.75);
+  border-bottom-color: rgba(0,0,0,0.08);
+}
+.notepad-header-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+}
+.notepad-icon {
+  font-size: 0.9rem;
+  line-height: 1;
+  flex-shrink: 0;
+}
+.notepad-title {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--teal);
+  white-space: nowrap;
+}
+/* Tab strip inside notepad */
+.notepad-tabs {
+  display: flex;
+  gap: 4px;
+  padding: 10px 12px 0;
+  flex-shrink: 0;
+  background: var(--surface2);
+  transition: background 0.35s ease;
+}
+[data-theme="light"] .notepad-tabs { background: rgba(255,255,255,0.75); }
+.notepad-tab {
+  flex: 1;
+  padding: 5px 4px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.5rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+  cursor: pointer;
+  transition: all 0.18s ease;
+  border: 1px solid transparent;
+}
+.notepad-tab.active {
+  background: var(--teal-dim);
+  border-color: var(--border2);
+  color: var(--teal);
+}
+.notepad-tab:hover:not(.active) {
+  color: var(--teal);
+  background: rgba(0,230,200,0.04);
+}
+[data-theme="light"] .notepad-tab.active {
+  border: 1.5px solid rgba(0,0,0,0.14);
+}
+/* Notepad pane content area */
+.notepad-pane {
+  display: none;
+  flex-direction: column;
+  flex: 1;
+  overflow: hidden;
+  min-height: 0;
+}
+.notepad-pane.active {
+  display: flex;
+}
+/* Main textarea */
+.notepad-textarea {
+  flex: 1;
+  width: 100%;
+  min-height: 0;
+  background: transparent;
+  border: none;
+  outline: none;
+  resize: none;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.8rem;
+  line-height: 1.65;
+  color: var(--text);
+  padding: 14px 16px;
+  caret-color: var(--teal);
+  transition: color 0.35s ease;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border2) transparent;
+}
+.notepad-textarea::placeholder {
+  color: var(--muted2);
+  font-style: italic;
+}
+.notepad-textarea::-webkit-scrollbar { width: 3px; }
+.notepad-textarea::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 4px; }
+.notepad-textarea::-webkit-scrollbar-thumb:hover { background: var(--teal); }
+
+/* Checklist pane */
+.notepad-checklist {
+  flex: 1;
+  overflow-y: auto;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border2) transparent;
+}
+.notepad-checklist::-webkit-scrollbar { width: 3px; }
+.notepad-checklist::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 4px; }
+.notepad-check-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  padding: 7px 10px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  transition: all 0.18s ease;
+  animation: npItemIn 0.2s cubic-bezier(0.22,1,0.36,1);
+}
+@keyframes npItemIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.notepad-check-item:hover { border-color: rgba(0,230,200,0.15); }
+.notepad-check-item.checked { opacity: 0.45; }
+.np-check {
+  width: 16px;
+  height: 16px;
+  border-radius: 5px;
+  border: 1.5px solid var(--border2);
+  background: transparent;
+  cursor: pointer;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.58rem;
+  color: var(--teal);
+  transition: all 0.18s;
+  margin-top: 1px;
+}
+.np-check:hover { background: var(--teal-dim); }
+.np-check.checked { background: var(--teal-dim); border-color: var(--teal); }
+.np-check-text {
+  flex: 1;
+  font-size: 0.75rem;
+  color: var(--text);
+  line-height: 1.45;
+  word-break: break-word;
+  outline: none;
+  background: transparent;
+  border: none;
+  font-family: 'DM Sans', sans-serif;
+  cursor: text;
+  transition: color 0.2s;
+}
+.notepad-check-item.checked .np-check-text {
+  text-decoration: line-through;
+  color: var(--muted);
+}
+.np-del {
+  width: 18px;
+  height: 18px;
+  border-radius: 5px;
+  border: none;
+  background: transparent;
+  color: var(--muted2);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.55rem;
+  flex-shrink: 0;
+  transition: all 0.15s;
+  padding: 0;
+  margin-top: 1px;
+}
+.np-del:hover { color: var(--red); background: rgba(255,95,109,0.08); border-radius: 4px; }
+/* Checklist add row */
+.notepad-check-add {
+  display: flex;
+  gap: 7px;
+  padding: 8px 12px 12px;
+  flex-shrink: 0;
+  background: var(--surface2);
+  border-top: 1px solid var(--border);
+  transition: background 0.35s ease, border-color 0.35s ease;
+}
+[data-theme="light"] .notepad-check-add {
+  background: rgba(255,255,255,0.75);
+  border-top-color: rgba(0,0,0,0.07);
+}
+.np-add-input {
+  flex: 1;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.74rem;
+  padding: 7px 10px;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.np-add-input::placeholder { color: var(--muted2); }
+.np-add-input:focus {
+  border-color: var(--border2);
+  box-shadow: 0 0 12px var(--teal-dim);
+}
+[data-theme="light"] .np-add-input {
+  background: rgba(255,255,255,0.92);
+  border: 1.5px solid rgba(0,0,0,0.12);
+}
+.np-add-btn {
+  padding: 7px 12px;
+  background: var(--teal-dim);
+  border: 1px solid var(--border2);
+  border-radius: 9px;
+  color: var(--teal);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.62rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.18s;
+  white-space: nowrap;
+}
+.np-add-btn:hover { background: rgba(0,230,200,0.16); box-shadow: 0 0 12px var(--teal-glow); }
+/* Notepad footer — char count, clear, etc */
+.notepad-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 14px;
+  border-top: 1px solid var(--border);
+  flex-shrink: 0;
+  background: var(--surface2);
+  transition: background 0.35s ease, border-color 0.35s ease;
+}
+[data-theme="light"] .notepad-footer {
+  background: rgba(255,255,255,0.75);
+  border-top-color: rgba(0,0,0,0.07);
+}
+.np-char-count {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.48rem;
+  color: var(--muted2);
+  letter-spacing: 0.1em;
+  transition: color 0.3s;
+}
+.np-char-count.near { color: var(--gold); }
+.np-footer-actions {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+.np-action-btn {
+  padding: 4px 10px;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  color: var(--muted);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.52rem;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.18s;
+}
+.np-action-btn:hover { border-color: var(--border2); color: var(--teal); background: var(--teal-dim); }
+.np-action-btn.danger:hover { border-color: rgba(255,95,109,0.3); color: var(--red); background: rgba(255,95,109,0.06); }
+[data-theme="light"] .np-action-btn { border: 1.5px solid rgba(0,0,0,0.10); }
+
+/* Quotes pane */
+.notepad-quotes {
+  flex: 1;
+  overflow-y: auto;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border2) transparent;
+}
+.notepad-quotes::-webkit-scrollbar { width: 3px; }
+.notepad-quotes::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 4px; }
+.np-quote-item {
+  padding: 10px 12px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-left: 2px solid var(--border2);
+  border-radius: 10px;
+  transition: all 0.18s;
+  animation: npItemIn 0.2s cubic-bezier(0.22,1,0.36,1);
+  position: relative;
+}
+.np-quote-item:hover { border-left-color: var(--teal); background: rgba(0,230,200,0.03); }
+.np-quote-text {
+  font-size: 0.74rem;
+  color: var(--text);
+  line-height: 1.55;
+  font-style: italic;
+  margin-bottom: 5px;
+  word-break: break-word;
+}
+.np-quote-author {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.5rem;
+  color: var(--teal);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.np-quote-del {
+  position: absolute;
+  top: 7px; right: 8px;
+  width: 18px; height: 18px;
+  border-radius: 5px;
+  border: none;
+  background: transparent;
+  color: var(--muted2);
+  cursor: pointer;
+  font-size: 0.52rem;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.15s;
+  padding: 0;
+}
+.np-quote-del:hover { color: var(--red); background: rgba(255,95,109,0.08); }
+/* Quote add area */
+.notepad-quote-add {
+  padding: 8px 12px 12px;
+  border-top: 1px solid var(--border);
+  flex-shrink: 0;
+  background: var(--surface2);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  transition: background 0.35s ease, border-color 0.35s ease;
+}
+[data-theme="light"] .notepad-quote-add {
+  background: rgba(255,255,255,0.75);
+  border-top-color: rgba(0,0,0,0.07);
+}
+.np-quote-textarea {
+  width: 100%;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.74rem;
+  line-height: 1.45;
+  padding: 8px 10px;
+  outline: none;
+  resize: none;
+  min-height: 54px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  font-style: italic;
+}
+.np-quote-textarea::placeholder { color: var(--muted2); font-style: italic; }
+.np-quote-textarea:focus { border-color: var(--border2); box-shadow: 0 0 12px var(--teal-dim); }
+[data-theme="light"] .np-quote-textarea { background: rgba(255,255,255,0.92); border: 1.5px solid rgba(0,0,0,0.12); }
+.np-quote-author-input {
+  width: 100%;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  color: var(--text);
+  font-family: 'Space Mono', monospace;
+  font-size: 0.62rem;
+  padding: 6px 10px;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.np-quote-author-input::placeholder { color: var(--muted2); font-family: 'DM Sans', sans-serif; }
+.np-quote-author-input:focus { border-color: var(--border2); box-shadow: 0 0 12px var(--teal-dim); }
+[data-theme="light"] .np-quote-author-input { background: rgba(255,255,255,0.92); border: 1.5px solid rgba(0,0,0,0.12); }
+
+/* ── Mobile / narrow: floating toggle button ── */
+.notepad-float-btn {
+  display: none;
+  position: fixed;
+  bottom: 24px;
+  left: 20px;
+  z-index: 200;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 14px 9px 10px;
+  background: var(--g2);
+  border: 1px solid var(--border2);
+  border-radius: 40px;
+  backdrop-filter: blur(20px);
+  box-shadow: 0 4px 24px rgba(0,0,0,0.35), 0 0 20px var(--teal-dim);
+  cursor: pointer;
+  user-select: none;
+  transition: box-shadow 0.25s, border-color 0.25s, transform 0.18s cubic-bezier(0.34,1.56,0.64,1);
+}
+.notepad-float-btn:hover { box-shadow: 0 4px 28px rgba(0,0,0,0.4), 0 0 28px var(--teal-glow); transform: translateY(-1px); }
+.notepad-float-btn:active { transform: scale(0.96); }
+.np-float-icon { font-size: 1rem; line-height: 1; }
+.np-float-label {
+  font-size: 0.56rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  font-family: 'DM Sans', sans-serif;
+}
+[data-theme="light"] .notepad-float-btn {
+  background: rgba(255,255,255,0.95);
+  box-shadow: 0 4px 20px rgba(0,40,80,0.12), 0 0 16px var(--teal-dim);
+  border: 1.5px solid rgba(0,0,0,0.12);
+}
+
+@media (max-width: 1099px) {
+  .notepad-float-btn { display: flex; }
+  .notepad-sidebar {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    width: 100%; max-height: 100vh;
+    border-radius: 0;
+    z-index: 500;
+    opacity: 0;
+    transform: translateX(-100%);
+    pointer-events: none;
+    transition: opacity 0.3s ease, transform 0.35s cubic-bezier(0.22,1,0.36,1);
+  }
+  .notepad-sidebar.mobile-open {
+    opacity: 1;
+    transform: translateX(0);
+    pointer-events: all;
+  }
+  .notepad-close-mobile {
+    display: flex !important;
+  }
+}
+@media (min-width: 1100px) {
+  .notepad-close-mobile { display: none !important; }
+}
+.notepad-close-mobile {
+  display: none;
+  width: 28px; height: 28px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+  transition: all 0.18s;
+  flex-shrink: 0;
+}
+.notepad-close-mobile:hover { border-color: rgba(255,95,109,0.3); color: var(--red); background: rgba(255,95,109,0.06); }
+
+/* Light mode: notepad sidebar full black-outline treatment */
+[data-theme="light"] .notepad-sidebar {
+  border: 1.5px solid rgba(0,0,0,0.13);
+}
+[data-theme="light"] .notepad-header {
+  border-bottom: 1.5px solid rgba(0,0,0,0.08);
+}
+[data-theme="light"] .notepad-footer {
+  border-top: 1.5px solid rgba(0,0,0,0.08);
+}
+[data-theme="light"] .notepad-check-add {
+  border-top: 1.5px solid rgba(0,0,0,0.07);
+}
+[data-theme="light"] .notepad-quote-add {
+  border-top: 1.5px solid rgba(0,0,0,0.07);
+}
+[data-theme="light"] .notepad-check-item {
+  border: 1.5px solid rgba(0,0,0,0.09);
+  background: rgba(255,255,255,0.85);
+}
+[data-theme="light"] .np-quote-item {
+  border: 1.5px solid rgba(0,0,0,0.09);
+  border-left: 2.5px solid var(--border2);
+  background: rgba(255,255,255,0.85);
+}
+[data-theme="light"] .notepad-tab {
+  border: 1px solid rgba(0,0,0,0.07);
+}
+[data-theme="light"] .notepad-tab.active {
+  border: 1.5px solid rgba(0,0,0,0.14);
+}
+
+/* Notepad saved indicator */
+.np-saved-flash {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.44rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--teal);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+.np-saved-flash.show { opacity: 1; }
+
+/* Smooth tab separator between notepad-tabs and pane */
+.notepad-tab-sep {
+  height: 1px;
+  background: var(--border);
+  margin: 0 0 0 0;
+  flex-shrink: 0;
+  transition: background 0.35s ease;
+}
+[data-theme="light"] .notepad-tab-sep { background: rgba(0,0,0,0.08); }
+
+/* Empty state in checklist/quotes */
+.np-empty {
+  text-align: center;
+  padding: 28px 0;
+  font-size: 0.6rem;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--muted2);
+}
+</style>
+
 <div class="pwa-banner" id="pwa-banner">
   <div class="pwa-banner-icon">⏱</div>
   <div class="pwa-banner-body">
@@ -5019,5 +5848,339 @@ const PWABanner = (() => {
 })();
 </script>
 
+<!-- ══ NOTEPAD SIDEBAR ══ -->
+<div class="notepad-sidebar" id="notepad-sidebar">
+  <!-- Header -->
+  <div class="notepad-header">
+    <div class="notepad-header-left">
+      <span class="notepad-icon">📝</span>
+      <span class="notepad-title">Notepad</span>
+    </div>
+    <span class="np-saved-flash" id="np-saved-flash">Saved ✓</span>
+    <button class="notepad-close-mobile" id="notepad-close-mobile" onclick="NP.closeMobile()" title="Close">✕</button>
+  </div>
+
+  <!-- Tab strip -->
+  <div class="notepad-tabs">
+    <button class="notepad-tab active" id="np-tab-notes" onclick="NP.switchPane('notes',this)">Notes</button>
+    <button class="notepad-tab" id="np-tab-tasks" onclick="NP.switchPane('tasks',this)">Checklist</button>
+    <button class="notepad-tab" id="np-tab-quotes" onclick="NP.switchPane('quotes',this)">Quotes</button>
+  </div>
+  <div class="notepad-tab-sep"></div>
+
+  <!-- ── Pane: Notes (freeform textarea) ── -->
+  <div class="notepad-pane active" id="np-pane-notes">
+    <textarea class="notepad-textarea" id="np-textarea"
+      placeholder="Write anything — plans, ideas, reflections, focus intentions…"
+      oninput="NP.onType()"
+      spellcheck="false"></textarea>
+    <div class="notepad-footer">
+      <span class="np-char-count" id="np-char-count">0 chars</span>
+      <div class="np-footer-actions">
+        <span class="np-saved-flash" id="np-note-saved" style="margin-right:4px">Saved ✓</span>
+        <button class="np-action-btn" onclick="NP.copyNote()" title="Copy all text">Copy</button>
+        <button class="np-action-btn danger" onclick="NP.clearNote()" title="Clear note">Clear</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Pane: Checklist ── -->
+  <div class="notepad-pane" id="np-pane-tasks">
+    <div class="notepad-checklist" id="np-checklist"></div>
+    <div class="notepad-check-add">
+      <input type="text" class="np-add-input" id="np-check-input"
+        placeholder="Add item…" maxlength="120"
+        onkeydown="if(event.key==='Enter')NP.addCheckItem()"/>
+      <button class="np-add-btn" onclick="NP.addCheckItem()">+ Add</button>
+    </div>
+    <div class="notepad-footer" style="padding:6px 14px">
+      <span class="np-char-count" id="np-check-count">0 items</span>
+      <div class="np-footer-actions">
+        <button class="np-action-btn danger" onclick="NP.clearChecked()">Clear Done</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Pane: Quotes ── -->
+  <div class="notepad-pane" id="np-pane-quotes">
+    <div class="notepad-quotes" id="np-quotes-list"></div>
+    <div class="notepad-quote-add">
+      <textarea class="np-quote-textarea" id="np-quote-text"
+        placeholder="&#8220;Write your favourite quote or mantra here…&#8221;"
+        rows="2" maxlength="300"
+        onkeydown="if(event.key==='Enter'&&(event.ctrlKey||event.metaKey))NP.addQuote()"></textarea>
+      <div style="display:flex;gap:6px">
+        <input type="text" class="np-quote-author-input" id="np-quote-author"
+          placeholder="— Author (optional)"
+          maxlength="60"
+          onkeydown="if(event.key==='Enter')NP.addQuote()"
+          style="flex:1"/>
+        <button class="np-add-btn" onclick="NP.addQuote()">+ Add</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Floating toggle for narrow screens -->
+<div class="notepad-float-btn" id="notepad-float-btn" onclick="NP.openMobile()">
+  <span class="np-float-icon">📝</span>
+  <span class="np-float-label">Notes</span>
+</div>
+
+<script>
+// ══════════════════════════════════════════════════════════════
+// NOTEPAD MODULE — ChronoBlast V14
+// Panes: Notes (freeform) | Checklist | Quotes
+// Persists to localStorage. Theme-aware. Zero dependencies.
+// ══════════════════════════════════════════════════════════════
+const NP = (() => {
+  const STORE_KEY = 'cb_notepad_v1';
+  let _data = { note: '', checks: [], quotes: [], pane: 'notes' };
+  let _saveTimer = null;
+
+  // ── Storage ──────────────────────────────────────────────────
+  const load = () => {
+    try {
+      const raw = localStorage.getItem(STORE_KEY);
+      if (raw) _data = { ..._data, ...JSON.parse(raw) };
+    } catch(e) {}
+  };
+
+  const save = () => {
+    try { localStorage.setItem(STORE_KEY, JSON.stringify(_data)); } catch(e) {}
+    // Flash "Saved" briefly
+    const fl = document.getElementById('np-note-saved');
+    if (fl) { fl.classList.add('show'); clearTimeout(fl._t); fl._t = setTimeout(() => fl.classList.remove('show'), 1400); }
+  };
+
+  const debounceSave = () => {
+    clearTimeout(_saveTimer);
+    _saveTimer = setTimeout(save, 600);
+  };
+
+  // ── Init ─────────────────────────────────────────────────────
+  const init = () => {
+    load();
+    const ta = document.getElementById('np-textarea');
+    if (ta) { ta.value = _data.note || ''; updateCharCount(); }
+    renderChecklist();
+    renderQuotes();
+    switchPane(_data.pane || 'notes', null, true);
+  };
+
+  // ── Char count ───────────────────────────────────────────────
+  const updateCharCount = () => {
+    const ta = document.getElementById('np-textarea');
+    const cc = document.getElementById('np-char-count');
+    if (!ta || !cc) return;
+    const len = ta.value.length;
+    cc.textContent = len.toLocaleString() + ' char' + (len !== 1 ? 's' : '');
+    cc.className = 'np-char-count' + (len > 4500 ? ' near' : '');
+  };
+
+  // ── Notes pane ───────────────────────────────────────────────
+  const onType = () => {
+    const ta = document.getElementById('np-textarea');
+    if (ta) _data.note = ta.value;
+    updateCharCount();
+    debounceSave();
+  };
+
+  const copyNote = () => {
+    const ta = document.getElementById('np-textarea');
+    if (!ta || !ta.value.trim()) return;
+    try {
+      navigator.clipboard.writeText(ta.value).then(() => {
+        const btn = document.querySelector('.np-action-btn');
+        if (btn) { const orig = btn.textContent; btn.textContent = 'Copied ✓'; setTimeout(() => btn.textContent = orig, 1500); }
+      });
+    } catch(e) {
+      ta.select(); document.execCommand('copy');
+    }
+  };
+
+  const clearNote = () => {
+    if (!confirm('Clear the notepad? This cannot be undone.')) return;
+    const ta = document.getElementById('np-textarea');
+    if (ta) ta.value = '';
+    _data.note = '';
+    updateCharCount();
+    save();
+  };
+
+  // ── Checklist pane ───────────────────────────────────────────
+  const renderChecklist = () => {
+    const el = document.getElementById('np-checklist');
+    if (!el) return;
+    // Update count badge
+    const cc = document.getElementById('np-check-count');
+    if (cc) {
+      const done = _data.checks.filter(c => c.done).length;
+      cc.textContent = `${_data.checks.length} item${_data.checks.length !== 1 ? 's' : ''}${done ? ' · ' + done + ' done' : ''}`;
+    }
+    if (!_data.checks.length) {
+      el.innerHTML = '<div class="np-empty">No items yet</div>';
+      return;
+    }
+    el.innerHTML = _data.checks.map((item, i) => `
+      <div class="notepad-check-item${item.done ? ' checked' : ''}" id="np-ci-${i}">
+        <div class="np-check${item.done ? ' checked' : ''}" onclick="NP.toggleCheck(${i})">${item.done ? '✓' : ''}</div>
+        <span class="np-check-text" contenteditable="true" spellcheck="false"
+          onblur="NP.updateCheckText(${i},this.textContent)"
+          onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur();}">${escHtml(item.text)}</span>
+        <button class="np-del" onclick="NP.deleteCheck(${i})">✕</button>
+      </div>`).join('');
+  };
+
+  const addCheckItem = () => {
+    const inp = document.getElementById('np-check-input');
+    const text = inp ? inp.value.trim() : '';
+    if (!text) return;
+    _data.checks.push({ text, done: false });
+    inp.value = '';
+    save();
+    renderChecklist();
+    // Scroll to bottom
+    setTimeout(() => {
+      const cl = document.getElementById('np-checklist');
+      if (cl) cl.scrollTop = cl.scrollHeight;
+    }, 60);
+  };
+
+  const toggleCheck = (i) => {
+    if (!_data.checks[i]) return;
+    _data.checks[i].done = !_data.checks[i].done;
+    save();
+    renderChecklist();
+  };
+
+  const updateCheckText = (i, text) => {
+    if (!_data.checks[i]) return;
+    const trimmed = text.trim();
+    if (!trimmed) { deleteCheck(i); return; }
+    _data.checks[i].text = trimmed;
+    debounceSave();
+  };
+
+  const deleteCheck = (i) => {
+    _data.checks.splice(i, 1);
+    save();
+    renderChecklist();
+  };
+
+  const clearChecked = () => {
+    _data.checks = _data.checks.filter(c => !c.done);
+    save();
+    renderChecklist();
+  };
+
+  // ── Quotes pane ──────────────────────────────────────────────
+  const renderQuotes = () => {
+    const el = document.getElementById('np-quotes-list');
+    if (!el) return;
+    if (!_data.quotes.length) {
+      el.innerHTML = '<div class="np-empty">No quotes yet</div>';
+      return;
+    }
+    el.innerHTML = _data.quotes.map((q, i) => `
+      <div class="np-quote-item">
+        <div class="np-quote-text">"${escHtml(q.text)}"</div>
+        ${q.author ? `<div class="np-quote-author">— ${escHtml(q.author)}</div>` : ''}
+        <button class="np-quote-del" onclick="NP.deleteQuote(${i})">✕</button>
+      </div>`).join('');
+  };
+
+  const addQuote = () => {
+    const textEl = document.getElementById('np-quote-text');
+    const authEl = document.getElementById('np-quote-author');
+    const text = textEl ? textEl.value.trim() : '';
+    if (!text) return;
+    const author = authEl ? authEl.value.trim() : '';
+    _data.quotes.unshift({ text, author });
+    textEl.value = ''; if (authEl) authEl.value = '';
+    save();
+    renderQuotes();
+  };
+
+  const deleteQuote = (i) => {
+    _data.quotes.splice(i, 1);
+    save();
+    renderQuotes();
+  };
+
+  // ── Pane switching ───────────────────────────────────────────
+  const switchPane = (pane, btn, silent) => {
+    _data.pane = pane;
+    if (!silent) debounceSave();
+    // Update tab buttons
+    document.querySelectorAll('.notepad-tab').forEach(t => t.classList.remove('active'));
+    const activeTab = document.getElementById('np-tab-' + pane);
+    if (activeTab) activeTab.classList.add('active');
+    // Show correct pane
+    document.querySelectorAll('.notepad-pane').forEach(p => p.classList.remove('active'));
+    const activePane = document.getElementById('np-pane-' + pane);
+    if (activePane) activePane.classList.add('active');
+  };
+
+  // ── Mobile open/close ────────────────────────────────────────
+  const openMobile = () => {
+    const sidebar = document.getElementById('notepad-sidebar');
+    if (sidebar) sidebar.classList.add('mobile-open');
+    document.body.style.overflow = 'hidden';
+  };
+
+  const closeMobile = () => {
+    const sidebar = document.getElementById('notepad-sidebar');
+    if (sidebar) sidebar.classList.remove('mobile-open');
+    document.body.style.overflow = '';
+  };
+
+  // ── Helpers ──────────────────────────────────────────────────
+  const escHtml = s => String(s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;');
+
+  // ── Public API ───────────────────────────────────────────────
+  return {
+    init, onType, copyNote, clearNote,
+    addCheckItem, toggleCheck, updateCheckText, deleteCheck, clearChecked,
+    addQuote, deleteQuote,
+    switchPane: (p, el) => switchPane(p, el),
+    openMobile, closeMobile,
+  };
+})();
+
+// Initialise notepad after DOM is ready
+document.addEventListener('DOMContentLoaded', () => NP.init(), { once: true });
+// Fallback if DOMContentLoaded already fired
+if (document.readyState !== 'loading') NP.init();
+</script>
+
+<script>
+// ── ChronoBlast Data Seed (runs once, then self-destructs) ──────────────────
+(function(){
+  const SEED_FLAG = 'cb_seed_v1_done';
+  try { if (localStorage.getItem(SEED_FLAG)) return; } catch(e){ return; }
+
+  const sessions = [{"type":"Pomodoro","ms":1500000,"date":"2026-06-03T17:12:50.803Z","taskName":"","hour":22,"goalId":"mt_1779711834384"},{"type":"Pomodoro","ms":3000000,"date":"2026-06-03T17:12:44.126Z","taskName":"","hour":22,"goalId":"mt_1779711834384"},{"type":"Task Pomodoro","ms":1500000,"date":"2026-06-03T06:13:56.263Z","taskName":"chrono","hour":11,"goalId":"mt_1779711834384"},{"type":"Timer","ms":3600000,"date":"2026-06-03T05:37:56.235Z","taskName":"","hour":11,"goalId":"mt_1779711834384"},{"type":"Mirror Goal","ms":2239599,"date":"2026-06-02T14:46:31.031Z","taskName":"","hour":20,"goalId":"mt_1779711834384"},{"type":"Mirror Goal","ms":218285,"date":"2026-06-02T08:01:05.037Z","taskName":"","hour":13,"goalId":"mt_1779711834384"},{"type":"Timer","ms":3600000,"date":"2026-06-02T07:51:34.263Z","taskName":"","hour":13,"goalId":"mt_1779711834384"},{"type":"Mirror Goal","ms":666771,"date":"2026-06-02T06:36:22.763Z","taskName":"","hour":12,"goalId":"mt_1779711834384"},{"type":"Pomodoro","ms":1500000,"date":"2026-06-01T16:59:09.903Z","taskName":"","hour":22,"goalId":"mt_1779711834384"},{"type":"Pomodoro","ms":3000000,"date":"2026-06-01T16:58:44.570Z","taskName":"","hour":22,"goalId":"mt_1779711834384"},{"type":"Mirror Goal","ms":2270395,"date":"2026-06-01T05:51:16.860Z","taskName":"","hour":11,"goalId":"mt_1779711834384"},{"type":"Mirror Goal","ms":312290,"date":"2026-05-31T17:41:15.005Z","taskName":"","hour":23,"goalId":"mt_1779711834384"},{"type":"Timer","ms":3600000,"date":"2026-05-31T17:20:07.298Z","taskName":"","hour":22,"goalId":"mt_1779711834384"},{"type":"Pomodoro","ms":1500000,"date":"2026-05-31T07:50:56.361Z","taskName":"","hour":13,"goalId":"mt_1779779519127"},{"type":"Pomodoro","ms":1500000,"date":"2026-05-31T07:50:50.675Z","taskName":"","hour":13,"goalId":"mt_1779779519127"},{"type":"Pomodoro","ms":1500000,"date":"2026-05-31T07:50:46.304Z","taskName":"","hour":13,"goalId":"mt_1779779519127"},{"type":"Timer","ms":3600000,"date":"2026-05-30T15:57:16.444Z","taskName":"","hour":21,"goalId":"mt_1779779519127"},{"type":"Timer","ms":3600000,"date":"2026-05-30T14:43:19.915Z","taskName":"","hour":20,"goalId":"mt_1779711834384"},{"type":"Mirror Goal","ms":1389553,"date":"2026-05-29T13:47:49.802Z","taskName":"","hour":19,"goalId":"mt_1779711834384"},{"type":"Mirror Goal","ms":923392,"date":"2026-05-29T09:30:02.096Z","taskName":"","hour":15,"goalId":"mt_1779711834384"},{"type":"Timer","ms":900000,"date":"2026-05-28T18:19:32.581Z","taskName":"","hour":23,"goalId":"mt_1779711834384"},{"type":"Mirror Goal","ms":2503438,"date":"2026-05-28T15:34:32.794Z","taskName":"","hour":21,"goalId":"mt_1779711834384"},{"type":"Mirror Goal","ms":805634,"date":"2026-05-28T14:21:29.728Z","taskName":"","hour":19,"goalId":"mt_1779711834384"},{"type":"Mirror Goal","ms":4201,"date":"2026-05-28T13:56:18.523Z","taskName":"","hour":19,"goalId":"mt_1779711834384"},{"type":"Mirror Goal","ms":3686039,"date":"2026-05-28T06:02:53.668Z","taskName":"","hour":11,"goalId":"mt_1779779519127"},{"type":"Mirror Goal","ms":4018,"date":"2026-05-28T04:59:09.452Z","taskName":"","hour":10,"goalId":"mt_1779779519127"},{"type":"Mirror Goal","ms":4188546,"date":"2026-05-27T19:47:40.091Z","taskName":"","hour":1,"goalId":"mt_1779779519127"},{"type":"Mirror Goal","ms":60850,"date":"2026-05-27T18:20:25.477Z","taskName":"","hour":23,"goalId":"mt_1779779519127"},{"type":"Mirror Goal","ms":876545,"date":"2026-05-27T18:19:07.987Z","taskName":"","hour":23,"goalId":"mt_1779779519127"},{"type":"Timer","ms":1800000,"date":"2026-05-27T17:26:36.913Z","taskName":"","hour":22,"goalId":"mt_1779779519127"},{"type":"Timer","ms":3600000,"date":"2026-05-27T16:01:58.789Z","taskName":"","hour":21,"goalId":"mt_1779711834384"},{"type":"Timer","ms":1800000,"date":"2026-05-27T14:51:59.420Z","taskName":"","hour":20,"goalId":"mt_1779779519127"},{"type":"Mirror Goal","ms":496761,"date":"2026-05-26T14:01:11.981Z","taskName":"","hour":19,"goalId":"mt_1779779519127"},{"type":"Mirror Goal","ms":1677910,"date":"2026-05-26T11:34:53.125Z","taskName":"","hour":17,"goalId":"mt_1779779519127"},{"type":"Timer","ms":1800000,"date":"2026-05-26T11:04:43.673Z","taskName":"","hour":16,"goalId":"mt_1779779519127"},{"type":"Timer","ms":1800000,"date":"2026-05-26T10:33:24.836Z","taskName":"","hour":16,"goalId":"mt_1779779519127"},{"type":"Timer","ms":3600000,"date":"2026-05-26T07:09:47.321Z","taskName":"","hour":12,"goalId":"mt_1779711834384"},{"type":"Pomodoro","ms":3000000,"date":"2026-05-26T05:38:52.220Z","taskName":"","hour":11,"goalId":"mt_1779716121104"},{"type":"Mirror Goal","ms":603478,"date":"2026-05-25T16:31:30.972Z","taskName":"","hour":22,"goalId":"mt_1779716121104"},{"type":"Mirror Goal","ms":1373847,"date":"2026-05-25T15:38:15.115Z","taskName":"","hour":21,"goalId":"mt_1779716121104"},{"type":"Timer","ms":900000,"date":"2026-05-25T13:52:38.629Z","taskName":"","hour":19,"goalId":"mt_1779716121104"},{"type":"Timer","ms":3600000,"date":"2026-05-25T13:34:40.281Z","taskName":"","hour":19,"goalId":"mt_1779711834384"},{"type":"Timer","ms":1800000,"date":"2026-05-25T11:42:45.366Z","taskName":"","hour":17,"goalId":"mt_1777662483434"},{"type":"Timer","ms":1800000,"date":"2026-05-25T11:10:08.325Z","taskName":"","hour":16,"goalId":"mt_1777662483434"},{"type":"Task","ms":600328,"date":"2026-05-25T10:33:05.221Z","taskName":"read","hour":16,"goalId":"mt_1777662483434"},{"type":"Mirror Goal","ms":1647271,"date":"2026-05-25T07:04:15.293Z","taskName":"","hour":12,"goalId":"mt_1777662483434"},{"type":"Task","ms":923765,"date":"2026-05-24T19:30:00.000Z","taskName":"read","hour":1,"goalId":"mt_1777662483434"},{"type":"Pomodoro","ms":12000000,"date":"2026-05-22T07:36:32.908Z","taskName":"","hour":13,"goalId":"mt_1777662483434"},{"type":"Pomodoro","ms":1500000,"date":"2026-05-17T15:31:33.388Z","taskName":"","hour":21,"goalId":"mt_1777662483434"},{"type":"Mirror Goal","ms":62256,"date":"2026-05-17T12:35:13.313Z","taskName":"","hour":18,"goalId":"mt_1777662483434"},{"type":"Mirror Goal","ms":963504,"date":"2026-05-17T12:33:12.597Z","taskName":"","hour":18,"goalId":"mt_1777662483434"},{"type":"Mirror Goal","ms":2964310,"date":"2026-05-17T06:34:45.814Z","taskName":"","hour":12,"goalId":"mt_1777662483434"},{"type":"Mirror Goal","ms":4313155,"date":"2026-05-17T05:42:43.874Z","taskName":"","hour":11,"goalId":"mt_1777662483434"},{"type":"Pomodoro","ms":1500000,"date":"2026-05-16T18:10:47.044Z","taskName":"","hour":23,"goalId":"mt_1777662483434"},{"type":"Pomodoro","ms":1500000,"date":"2026-05-16T18:10:41.798Z","taskName":"","hour":23,"goalId":"mt_1777662483434"},{"type":"Pomodoro","ms":1500000,"date":"2026-05-16T17:43:27.749Z","taskName":"","hour":23,"goalId":"mt_1777662483434"},{"type":"Mirror Goal","ms":3659559,"date":"2026-05-15T20:26:21.715Z","taskName":"","hour":1,"goalId":"mt_1777662483434"},{"type":"Mirror Goal","ms":1373059,"date":"2026-05-15T19:24:56.195Z","taskName":"","hour":0,"goalId":"mt_1777662483434"},{"type":"Pomodoro","ms":1500000,"date":"2026-05-15T16:54:14.631Z","taskName":"","hour":22,"goalId":"mt_1777662483434"},{"type":"Pomodoro","ms":1500000,"date":"2026-05-15T16:48:44.685Z","taskName":"","hour":22,"goalId":"mt_1777662483434"},{"type":"Pomodoro","ms":1500000,"date":"2026-05-15T16:21:52.250Z","taskName":"","hour":21,"goalId":"mt_1777662483434"},{"type":"Pomodoro","ms":1500000,"date":"2026-05-14T11:35:12.428Z","taskName":"","hour":17,"goalId":"mt_1777662483434"},{"type":"Pomodoro","ms":1500000,"date":"2026-05-14T10:33:28.933Z","taskName":"","hour":16,"goalId":"mt_1777662483434"},{"type":"Pomodoro","ms":1500000,"date":"2026-05-14T10:03:28.251Z","taskName":"","hour":15,"goalId":"mt_1777662483434"},{"type":"Pomodoro","ms":1500000,"date":"2026-05-14T09:37:37.931Z","taskName":"","hour":15,"goalId":"mt_1777662483434"},{"type":"Pomodoro","ms":3000000,"date":"2026-05-13T11:09:54.480Z","taskName":"","hour":16,"goalId":"mt_1777662483434"},{"type":"Pomodoro","ms":3000000,"date":"2026-05-13T10:09:47.170Z","taskName":"","hour":15,"goalId":"mt_1777662483434"},{"type":"Pomodoro","ms":3000000,"date":"2026-05-13T08:44:47.036Z","taskName":"","hour":14,"goalId":"mt_1777662483434"},{"type":"Pomodoro","ms":3000000,"date":"2026-05-13T07:49:54.226Z","taskName":"","hour":13,"goalId":"mt_1777662483434"},{"type":"Timer","ms":3600000,"date":"2026-05-02T05:11:22.243Z","taskName":"","hour":10,"goalId":"mt_1777662483434"},{"type":"Timer","ms":3600000,"date":"2026-04-30T20:10:02.225Z","taskName":"","hour":1,"goalId":null},{"type":"Timer","ms":2700000,"date":"2026-04-29T16:40:31.522Z","taskName":"","hour":22,"goalId":null},{"type":"Timer","ms":3600000,"date":"2026-04-29T11:01:15.588Z","taskName":"","hour":16,"goalId":null},{"type":"Timer","ms":3600000,"date":"2026-04-29T09:08:15.297Z","taskName":"","hour":14,"goalId":null},{"type":"Timer","ms":10800000,"date":"2026-04-27T16:45:42.831Z","taskName":"","hour":22,"goalId":null},{"type":"Stopwatch","ms":823098,"date":"2026-04-26T19:42:08.984Z","taskName":"","hour":1,"goalId":null},{"type":"Stopwatch","ms":3830140,"date":"2026-04-26T17:31:00.358Z","taskName":"","hour":23,"goalId":null},{"type":"Timer","ms":8700000,"date":"2026-04-24T13:22:47.560Z","taskName":"","hour":18,"goalId":null},{"type":"Pomodoro","ms":1500000,"date":"2026-04-23T08:23:31.791Z","taskName":"","hour":13,"goalId":null},{"type":"Pomodoro","ms":1500000,"date":"2026-04-23T07:57:31.980Z","taskName":"","hour":13,"goalId":null},{"type":"Timer","ms":3600000,"date":"2026-04-22T16:18:46.710Z","taskName":"","hour":21,"goalId":null},{"type":"Stopwatch","ms":1555872,"date":"2026-04-22T04:07:39.863Z","taskName":"","hour":9,"goalId":null},{"type":"Stopwatch","ms":690240,"date":"2026-04-21T17:29:46.021Z","taskName":"","hour":22,"goalId":null},{"type":"Stopwatch","ms":3675194,"date":"2026-04-20T10:03:16.268Z","taskName":"","hour":15,"goalId":null},{"type":"Pomodoro","ms":1500000,"date":"2026-04-19T13:21:50.232Z","taskName":"","hour":18,"goalId":null},{"type":"Pomodoro","ms":1500000,"date":"2026-04-19T12:56:19.448Z","taskName":"","hour":18,"goalId":null},{"type":"Timer","ms":1500000,"date":"2026-04-19T12:49:37.879Z","taskName":"","hour":18,"goalId":null},{"type":"Stopwatch","ms":1329518,"date":"2026-04-19T12:20:07.770Z","taskName":"","hour":17,"goalId":null},{"type":"Pomodoro","ms":1500000,"date":"2026-04-18T20:35:52.359Z","taskName":"","hour":2,"goalId":null},{"type":"Pomodoro","ms":1500000,"date":"2026-04-18T18:34:25.102Z","taskName":"","hour":0,"goalId":null},{"type":"Pomodoro","ms":1500000,"date":"2026-04-18T18:19:49.338Z","taskName":"","hour":23,"goalId":null}];
+
+  const profile = {"name":"Nikunj","age":"17","occ":"Professional sigma","asp":"to rise"};
+  const mirror  = {"goals":[],"dailyGoals":[],"activeGoalId":"mt_1779711834384"};
+
+  try {
+    // Only seed if sessions storage is actually empty
+    const existing = JSON.parse(localStorage.getItem('cb_sessions') || '[]');
+    if (existing.length === 0) {
+      localStorage.setItem('cb_sessions', JSON.stringify(sessions));
+      localStorage.setItem('cb_profile',  JSON.stringify(profile));
+      localStorage.setItem('cb_mirror',   JSON.stringify(mirror));
+      localStorage.setItem('chronoblast_active_goal', mirror.activeGoalId);
+    }
+    localStorage.setItem(SEED_FLAG, '1');
+  } catch(e) { console.warn('CB seed failed', e); }
+})();
+</script>
+
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js/v833ccba57c9e4d2798f2e76cebdd09a11778172276447" integrity="sha512-57MDmcccJXYtNnH+ZiBwzC4jb2rvgVCEokYN+L/nLlmO8rfYT/gIpW2A569iJ/3b+0UEasghjuZH/ma3wIs/EQ==" data-cf-beacon='{"version":"2024.11.0","token":"4edd5f8ec12a48cfa682ab8261b80a79","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
 </body>
 </html>
